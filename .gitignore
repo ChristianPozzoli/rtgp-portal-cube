@@ -1,0 +1,7 @@
+.vscode/
+*.obj
+*.exe
+*.ilk
+*.pdb
+*.code-workspace
+libs/
