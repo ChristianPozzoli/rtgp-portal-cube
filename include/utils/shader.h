@@ -12,6 +12,87 @@ class Shader
 {
 public:
     GLuint Program;
+    
+    Shader(const GLchar* vertexPath, const GLchar* geometryPath, const GLchar* fragmentPath) {
+        string vertexCode, geometryCode, fragmentCode;
+        ifstream vShaderFile, gShaderFile, fShaderFile;
+
+        vShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+        gShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+        fShaderFile.exceptions(ifstream::failbit | ifstream::badbit);
+
+        try
+        {
+            vShaderFile.open(vertexPath);
+            gShaderFile.open(geometryPath);
+            fShaderFile.open(fragmentPath);
+
+            stringstream vShaderStream, gShaderStream, fShaderStream;
+            vShaderStream << vShaderFile.rdbuf();
+            gShaderStream << gShaderFile.rdbuf();
+            fShaderStream << fShaderFile.rdbuf();
+
+            vShaderFile.close();
+            gShaderFile.close();
+            fShaderFile.close();
+
+            vertexCode = vShaderStream.str();
+            geometryCode = gShaderStream.str();
+            fragmentCode = fShaderStream.str();
+        }
+        catch (ifstream::failure e)
+        {
+            cout << "ERROR reading vertex or fragment file" << endl;
+        }
+
+        const GLchar* vShaderCode = vertexCode.c_str();
+        const GLchar* gShaderCode = geometryCode.c_str();
+        const GLchar* fShaderCode = fragmentCode.c_str();
+
+        // Build and compile our shader program
+        // Vertex shader
+        GLint vertexShader = glCreateShader(GL_VERTEX_SHADER); // Creates an empty shader object and returns a non-zero value by which it can be referenced
+        glShaderSource(vertexShader, 1, &vShaderCode, NULL); // Sets the source code in shader to the source code in the array of strings specified by string. Any source code previously stored in the shader object is completely replaced
+        glCompileShader(vertexShader); // Compiles the source code strings that have been stored in the shader object
+
+        checkCompileErrors(vertexShader, "VERTEX");
+        
+        // Geometry shader
+        GLint geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometryShader, 1, &gShaderCode, NULL);
+        glCompileShader(geometryShader);
+
+        checkCompileErrors(geometryShader, "GEOMETRY");
+        
+        // Fragment shader
+        GLint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
+        glCompileShader(fragmentShader);
+
+        checkCompileErrors(fragmentShader, "FRAGMENT");
+
+        // Link shaders
+        this->Program = glCreateProgram();
+        glAttachShader(this->Program, vertexShader);
+        glAttachShader(this->Program, fragmentShader);
+        glAttachShader(this->Program, geometryShader);
+        glLinkProgram(this->Program);
+
+        checkCompileErrors(this->Program, "PROGRAM");
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteShader(geometryShader);
+
+        Use();
+        
+        GLint texLocation = glGetUniformLocation(this->Program, "tex");
+
+        if(texLocation != - 1)
+        {
+            glUniform1i(texLocation, 0);
+        }
+    }
 
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath) {
         string vertexCode, fragmentCode;

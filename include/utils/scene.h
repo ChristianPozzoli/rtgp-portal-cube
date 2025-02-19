@@ -43,6 +43,8 @@ public:
         }
     }
 
+    void drawImGui() {}
+
 private:
     vector<DrawableSceneObject*>* objects;
 
