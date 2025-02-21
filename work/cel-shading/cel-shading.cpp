@@ -115,7 +115,7 @@ Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
 glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 
-glm::vec3 diffuseColor(1.0f, 0.0f, 0.0f);
+glm::vec3 diffuseColor(1.0f, 1.0f, 1.0f);
 glm::vec3 specularColor(1.0f, 1.0f, 1.0f);
 glm::vec3 ambientColor(0.1f, 0.1f, 0.1f);
 
@@ -126,7 +126,11 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
-GLfloat celShadingThickness = .3f;
+GLfloat cel_shading_texture_offset_factor = 750.0f;
+GLint cel_shading_poster_factor_sobel = 20;
+GLint cel_shading_poster_factor_final = 10;
+GLfloat cel_shading_texture_outline_threshold_lower = 2.0f;
+GLfloat cel_shading_texture_outline_threshold_upper = 3.0f;
 
 // color to be passed as uniform to the shader of the plane
 glm::vec3 groundColor(0.0f, 0.5f, 0.0f);
@@ -212,6 +216,8 @@ int main()
     PrintCurrentShader(current_subroutine);
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
+    Texture paperTexture("../../textures/paper_3000-marked.jpg");
+    Texture modelTexture("../../textures/rubber_duck_toy_diff_1k.jpg");
     Texture lut_cel_shading_texture("../../textures/LUT_cel_shading_inter_3.png", GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
     lut_cel_shading_texture.setWrapS(GL_CLAMP_TO_EDGE);
     lut_cel_shading_texture.setWrapT(GL_REPEAT);
@@ -225,14 +231,15 @@ int main()
     ModelObject sphereObject("../../models/sphere.obj", cel_shading, spherePosition, sphereScale);
     sphereObject.setColor(diffuseColor);
 
-    ModelObject cubeObject("../../models/cube.obj", cel_shading, cubePosition, cubeScale);
-    cubeObject.setColor(diffuseColor);
+    ModelObject cubeObject("../../models/rubber_duck_toy_1k.fbx", cel_shading, cubePosition, cubeScale, glm::vec3(-90.0, 0.0, 0.0));
+    cubeObject.setTexture(&modelTexture);
 
     ModelObject floorObject("../../models/plane.obj", cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(groundColor);
 
     PlaneObject plane(cel_shading, glm::vec3(10.0f, 0.0f, 0.0f), 2.0f, glm::vec3(0));
+    plane.setTexture(&paperTexture);
 
     glm::mat4 view = glm::mat4(1.0f);
 
@@ -289,11 +296,18 @@ int main()
 			if (ImGui::InputFloat3("Cube position", (float*)&cubePosition)) { cubeObject.setPosition(cubePosition); }
             if (ImGui::InputFloat("Cube scale", &cubeScale)) { cubeObject.setScale(cubeScale); }
 
+			if(ImGui::CollapsingHeader("Cel Shading Configuration")) {
+                ImGui::InputFloat("Texture Offset Factor", (float*)&cel_shading_texture_offset_factor, 1.0f, 10000.0f);
+                ImGui::SliderFloat("Texture Outline Threshold Lower", (float*)&cel_shading_texture_outline_threshold_lower, 0.0f, 50.0f);
+                ImGui::SliderFloat("Texture Outline Threshold Upper", (float*)&cel_shading_texture_outline_threshold_upper, 0.0f, 50.0f);
+                ImGui::SliderInt("Poster Factor for sobel effect", &cel_shading_poster_factor_sobel, 1.0f, 50.0f);
+                ImGui::SliderInt("Poster Factor for final color", &cel_shading_poster_factor_final, 1.0f, 50.0f);
+            }
+
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
 				ImGui::InputFloat3("Light Position", (float*)&lightPos0);
 			    ImGui::SeparatorText("Cel shading parameters");
-				ImGui::SliderFloat("Thickness", (float*)&celShadingThickness, 0.0f, 1.0f);
                 ImGui::SeparatorText("Illumination model parameters");
 				ImGui::Text("Illumination Model = %s", subroutines[current_subroutine]);
 				ImGui::SliderFloat("Kd", (float*)&Kd, 0.0f, 2.0f);
@@ -575,5 +589,10 @@ void setup_cel_shading(Shader& cel_shading)
     glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
     glUniform3fv(matAmbientLocation, 1, glm::value_ptr(ambientColor));
     glUniform3fv(matSpecularLocation, 1, glm::value_ptr(specularColor));
-    glUniform1f(thicknessLocation, celShadingThickness);
+
+    cel_shading.SetFloat("offset_factor", cel_shading_texture_offset_factor);
+    cel_shading.SetFloat("outline_threshold_lower", cel_shading_texture_outline_threshold_lower);
+    cel_shading.SetFloat("outline_threshold_upper", cel_shading_texture_outline_threshold_upper);
+    cel_shading.SetInt("poster_factor_sobel", cel_shading_poster_factor_sobel);
+    cel_shading.SetInt("poster_factor_final", cel_shading_poster_factor_final);
 }
