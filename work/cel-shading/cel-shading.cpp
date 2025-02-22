@@ -131,21 +131,12 @@ GLint cel_shading_poster_factor_sobel = 20;
 GLint cel_shading_poster_factor_final = 10;
 GLfloat cel_shading_texture_outline_threshold_lower = 2.0f;
 GLfloat cel_shading_texture_outline_threshold_upper = 3.0f;
-
-// color to be passed as uniform to the shader of the plane
-glm::vec3 groundColor(0.0f, 0.5f, 0.0f);
-
-glm::vec3 bunnyPosition(-5.0f, 1.0f, -5.0f);
-GLfloat bunnyScale = 0.5f;
-
-glm::vec3 spherePosition(0.0f, 1.0f, -5.0f);
-GLfloat sphereScale = 1.5f;
-
-glm::vec3 cubePosition(5.0f, 1.0f, -5.0f);
-GLfloat cubeScale = 1.5f;
+GLfloat along_normals_factor = 0.0035f;
+GLfloat gloss_threshold = 0.95f;
+GLfloat gloss_factor = 0.25f;
 
 void setup_illum_shader(Shader&);
-void setup_cel_shading(Shader&);
+void setup_npr_shading(Shader&);
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -207,8 +198,9 @@ int main()
     
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader illum_shader = Shader("illumination_model.vert", "illumination_model.frag");
+    Shader back_face_shader = Shader("backface_outline.vert", "blackcolor.frag");
     Shader cel_shading = Shader("illumination_model.vert", "cel_shading.frag");
-    Shader geometry_shader = Shader("geom_vertex.vert", "geometry.geom", "geom_fragment.frag");
+    //Shader geometry_shader = Shader("geom_vertex.vert", "geometry.geom", "geom_fragment.frag");
     // we parse the Shader Program to search for the number and names of the subroutines.
     // the names are placed in the shaders vector
     SetupShader(illum_shader.Program);
@@ -216,30 +208,57 @@ int main()
     PrintCurrentShader(current_subroutine);
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
-    Texture paperTexture("../../textures/paper_3000-marked.jpg");
-    Texture modelTexture("../../textures/rubber_duck_toy_diff_1k.jpg");
-    Texture lut_cel_shading_texture("../../textures/LUT_cel_shading_inter_3.png", GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
+    Texture lut_cel_shading_texture("../../textures/cel_shading_scene/LUT_cel_shading_3.png", GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
     lut_cel_shading_texture.setWrapS(GL_CLAMP_TO_EDGE);
     lut_cel_shading_texture.setWrapT(GL_REPEAT);
 
+    ModelObject floorObject("Floor", "../../models/plane.obj", cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
+    floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
+    floorObject.setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+    
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject bunnyObject("../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale);
+    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", cel_shading, glm::vec3(-5.0f, 1.0f, -5.0f), 0.5f);
     bunnyObject.setTexture(&uvTexture);
     bunnyObject.setColor(diffuseColor);
-
+    
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject sphereObject("../../models/sphere.obj", cel_shading, spherePosition, sphereScale);
+    ModelObject sphereObject("Sphere", "../../models/sphere.obj", cel_shading, glm::vec3(0.0f, 1.0f, -5.0f), 1.5f);
     sphereObject.setColor(diffuseColor);
+    
+    ModelObject duckObject("Duck", "../../models/cel_shading_scene/rubber_duck_toy_lp.gltf", cel_shading, glm::vec3(-1.0f, -1.0f, 4.0), 1.0f, glm::vec3(-90.0f, 0.0, 150.0f));
+    Texture duckTexture("../../textures/cel_shading_scene/rubber_duck_toy_diff_1k.jpg");
+    duckObject.setTexture(&duckTexture);
+    
+    ModelObject teddyObject("Teddy", "../../models/cel_shading_scene/teddybear.fbx", cel_shading, glm::vec3(0.0, 0.0, 4.0f), 1.0f, glm::vec3(-90.0f, 0.0, 180.0f));
+    Texture teddyTexture("../../textures/cel_shading_scene/teddybear_base.png");
+    teddyObject.setTexture(&teddyTexture);
+    
+    ModelObject teddyObject2("Teddy2", "../../models/cel_shading_scene/teddybear_2.gltf", cel_shading, glm::vec3(0.0, 0.0, 0.0), 0.5f, glm::vec3(-90.0f, 0.0, 0.0));
+    Texture teddyTexture2("../../textures/cel_shading_scene/teddybear_2.png");
+    teddyObject2.setTexture(&teddyTexture2);
+    
+    ModelObject spidermanObject("Spiderman", "../../models/cel_shading_scene/spiderman_toy_lp.gltf", cel_shading, glm::vec3(1.2f, -1.08f, 0.0), 0.15f, glm::vec3(-90.0f, 0.0, 0.0));
+    Texture spidermanTexture("../../textures/cel_shading_scene/spiderman_toy.png");
+    spidermanObject.setTexture(&spidermanTexture);
+    
+    ModelObject cribObject("Crib", "../../models/cel_shading_scene/baby_crib.gltf", cel_shading, glm::vec3(0.0, -1.0f, 0.0), 0.3f, glm::vec3(0.0f, 30.0f, 0.0));
+    Texture cribTexture("../../textures/cel_shading_scene/baby_crib.jpeg");
+    cribObject.setTexture(&cribTexture);
+    
+    ModelObject cubesToyObject("Cubes toy", "../../models/cel_shading_scene/cubes_toy.gltf", cel_shading, glm::vec3(-1.25f, -1.0f, 0.85), 0.085f, glm::vec3(0.0, 0.0, 0.0));
+    Texture cubesToyTexture("../../textures/cel_shading_scene/cubes_toy.png");
+    cubesToyObject.setTexture(&cubesToyTexture);
 
-    ModelObject cubeObject("../../models/rubber_duck_toy_1k.fbx", cel_shading, cubePosition, cubeScale, glm::vec3(-90.0, 0.0, 0.0));
-    cubeObject.setTexture(&modelTexture);
-
-    ModelObject floorObject("../../models/plane.obj", cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
-    floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
-    floorObject.setColor(groundColor);
-
-    PlaneObject plane(cel_shading, glm::vec3(10.0f, 0.0f, 0.0f), 2.0f, glm::vec3(0));
-    plane.setTexture(&paperTexture);
+    Scene main_scene;
+    main_scene.add_object(&floorObject);
+    main_scene.add_object(&bunnyObject);
+    main_scene.add_object(&sphereObject);
+    main_scene.add_object(&duckObject);
+    main_scene.add_object(&teddyObject);
+    main_scene.add_object(&teddyObject2);
+    main_scene.add_object(&spidermanObject);
+    main_scene.add_object(&cribObject);
+    main_scene.add_object(&cubesToyObject);
 
     glm::mat4 view = glm::mat4(1.0f);
 
@@ -275,40 +294,32 @@ int main()
             ImGui::SeparatorText("Properties");
             ImGui::Checkbox("Wireframe", (bool*)&wireframe);
             ImGui::Checkbox("Spinning", (bool*)&spinning);
-			
-			ImGui::SeparatorText("Colors");
-            if (ImGui::ColorEdit3("Ground color", (float*)&groundColor)) { floorObject.setColor(groundColor); }
-            if(ImGui::ColorEdit3("Objects color", (float*)&diffuseColor)) {
-                sphereObject.setColor(diffuseColor);
-                cubeObject.setColor(diffuseColor);
-                bunnyObject.setColor(diffuseColor);
-            }
-			
-			ImGui::SeparatorText("Bunny");
-			if (ImGui::InputFloat3("Bunny position", (float*)&bunnyPosition)) { bunnyObject.setPosition(bunnyPosition); }
-            if (ImGui::InputFloat("Bunny scale", &bunnyScale)) { bunnyObject.setScale(bunnyScale); }
-            
-			ImGui::SeparatorText("Sphere");
-			if (ImGui::InputFloat3("Sphere position", (float*)&spherePosition)) { sphereObject.setPosition(spherePosition); }
-            if (ImGui::InputFloat("Sphere scale", &sphereScale)) { sphereObject.setScale(sphereScale); }
-            
-			ImGui::SeparatorText("Cube");
-			if (ImGui::InputFloat3("Cube position", (float*)&cubePosition)) { cubeObject.setPosition(cubePosition); }
-            if (ImGui::InputFloat("Cube scale", &cubeScale)) { cubeObject.setScale(cubeScale); }
 
+            if (ImGui::CollapsingHeader("Objects")) {
+                for(auto i = main_scene.cbegin(); i != main_scene.cend(); ++i) {
+                    (*i)->drawImGui();
+                }
+            }
+
+            ImGui::SeparatorText("Shaders");
+            
 			if(ImGui::CollapsingHeader("Cel Shading Configuration")) {
                 ImGui::InputFloat("Texture Offset Factor", (float*)&cel_shading_texture_offset_factor, 1.0f, 10000.0f);
                 ImGui::SliderFloat("Texture Outline Threshold Lower", (float*)&cel_shading_texture_outline_threshold_lower, 0.0f, 50.0f);
                 ImGui::SliderFloat("Texture Outline Threshold Upper", (float*)&cel_shading_texture_outline_threshold_upper, 0.0f, 50.0f);
                 ImGui::SliderInt("Poster Factor for sobel effect", &cel_shading_poster_factor_sobel, 1.0f, 50.0f);
                 ImGui::SliderInt("Poster Factor for final color", &cel_shading_poster_factor_final, 1.0f, 50.0f);
+                ImGui::SeparatorText("Glossiness");
+                ImGui::SliderFloat("Gloss threshold", (float*)&gloss_threshold, 0.0f, 1.0f);
+                ImGui::SliderFloat("Gloss factor", (float*)&gloss_factor, 0.0f, 1.0f);
+                ImGui::SeparatorText("Outline");
+                ImGui::SliderFloat("Vectors along normals", (float*)&along_normals_factor, 0.0f, 0.015f, "%.5f");
+                
             }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
 				ImGui::InputFloat3("Light Position", (float*)&lightPos0);
-			    ImGui::SeparatorText("Cel shading parameters");
-                ImGui::SeparatorText("Illumination model parameters");
 				ImGui::Text("Illumination Model = %s", subroutines[current_subroutine]);
 				ImGui::SliderFloat("Kd", (float*)&Kd, 0.0f, 2.0f);
 				ImGui::SliderFloat("Ks", (float*)&Ks, 0.0f, 2.0f);
@@ -347,19 +358,21 @@ int main()
             orientationY+=(deltaTime*spin_speed);
         }
 
-        setup_cel_shading(cel_shading);
+        setup_npr_shading(cel_shading);
         cel_shading.SetInt("LUT", 1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, lut_cel_shading_texture.name());
+        
+        back_face_shader.Use();
+        back_face_shader.SetFloat("alongNormalsFactor", along_normals_factor);
 		
-		bunnyObject.draw(view, projection);
-		sphereObject.draw(view, projection);
-		cubeObject.draw(view, projection);
-		floorObject.draw(view, projection);
-        plane.draw(view, projection);
-
-        geometry_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
-		sphereObject.draw(view, projection, &geometry_shader);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        main_scene.draw(view, projection, &back_face_shader);
+        
+        
+        glCullFace(GL_BACK);
+        main_scene.draw(view, projection);
         
         // Rendering imgui
         ImGui::Render();
@@ -375,6 +388,8 @@ int main()
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
     illum_shader.Delete();
+    cel_shading.Delete();
+    back_face_shader.Delete();
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -577,7 +592,7 @@ void setup_illum_shader(Shader& illum_shader)
     glUniform1f(f0Location, F0);
 }
 
-void setup_cel_shading(Shader& cel_shading)
+void setup_npr_shading(Shader& cel_shading)
 {
     cel_shading.Use(subroutines[current_subroutine]);
 
@@ -595,4 +610,6 @@ void setup_cel_shading(Shader& cel_shading)
     cel_shading.SetFloat("outline_threshold_upper", cel_shading_texture_outline_threshold_upper);
     cel_shading.SetInt("poster_factor_sobel", cel_shading_poster_factor_sobel);
     cel_shading.SetInt("poster_factor_final", cel_shading_poster_factor_final);
+    cel_shading.SetFloat("gloss_threshold", gloss_threshold);
+    cel_shading.SetFloat("gloss_factor", gloss_factor);
 }

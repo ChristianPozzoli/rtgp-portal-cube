@@ -17,9 +17,9 @@ using namespace std;
 class DrawableSceneObject : public DrawableObject, public SceneObject
 {
     public:
-        DrawableSceneObject(Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+        DrawableSceneObject(std::string name, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
             DrawableObject(shader),
-            SceneObject(position, scale, rotation)
+            SceneObject(name, position, scale, rotation)
         {}
 
         ~DrawableSceneObject()

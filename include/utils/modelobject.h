@@ -17,8 +17,8 @@ using namespace std;
 class ModelObject : public DrawableSceneObject
 {
 public:
-    ModelObject(std::string modelPath, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
-        DrawableSceneObject(shader, position, scale, rotation)
+    ModelObject(std::string name, std::string modelPath, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+        DrawableSceneObject(name, shader, position, scale, rotation)
     {
         m_model = new Model(modelPath);
     }

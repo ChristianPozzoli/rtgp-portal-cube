@@ -17,8 +17,8 @@ using namespace std;
 class PlaneObject : public DrawableSceneObject
 {
 public:
-    PlaneObject(Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
-        DrawableSceneObject(shader, position, scale, rotation)
+    PlaneObject(std::string name, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+        DrawableSceneObject(name, shader, position, scale, rotation)
     {
         GLfloat vertices[] = {
          0.5f,  0.5f, 0.0f,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f, // Top Right

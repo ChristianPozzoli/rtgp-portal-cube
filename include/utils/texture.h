@@ -32,7 +32,7 @@ class Texture
 
         ~Texture()
         {
-            if(m_textureName) return;
+            if(!m_textureName) return;
 
             glDeleteTextures(1, &m_textureName);
             m_textureName = 0;

@@ -36,11 +36,19 @@ public:
 
     void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
     {
-        for (vector<DrawableSceneObject*>::iterator iter = objects->begin(); iter < objects->end(); iter++)
+        for (vector<DrawableSceneObject*>::iterator iter = objects->begin(); iter < objects->end(); ++iter)
         {
             DrawableSceneObject* object = *iter;
             object->draw(view, projection, override_shader);
         }
+    }
+
+    std::vector<DrawableSceneObject *>::const_iterator cbegin() {
+         return objects->cbegin();
+    }
+
+    std::vector<DrawableSceneObject *>::const_iterator cend() {
+         return objects->cend();
     }
 
     void drawImGui() {}

@@ -16,24 +16,34 @@ using namespace std;
 class SceneObject
 {
     public:
-        SceneObject(glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+        SceneObject(std::string name, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
             m_modelMatrix(glm::mat4(1.0f)),
+            m_name(name),
             m_position(position),
+            imgui_position(position),
             m_rotation(rotation),
+            imgui_rotation(rotation),
             m_scale(glm::vec3(scale)),
+            imgui_scale_f(scale),
             m_color(glm::vec4(1.0f)),
+            imgui_color(glm::vec4(1.0f)),
             parent(nullptr)
-        {
-            children = new vector<SceneObject*>;
-            updateModelMatrix();
-        }
-
-        SceneObject(SceneObject* parent, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+            {
+                children = new vector<SceneObject*>;
+                updateModelMatrix();
+            }
+            
+            SceneObject(std::string name, SceneObject* parent, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
             m_modelMatrix(glm::mat4(1.0f)),
+            m_name(name),
             m_position(position),
+            imgui_position(position),
             m_rotation(rotation),
+            imgui_rotation(rotation),
             m_scale(glm::vec3(scale)),
+            imgui_scale_f(scale),
             m_color(glm::vec4(1.0f)),
+            imgui_color(glm::vec4(1.0f)),
             parent(parent)
         {
             children = new vector<SceneObject*>;
@@ -93,12 +103,14 @@ class SceneObject
         void setPosition(glm::vec3 position)
         {
             m_position = position;
+            imgui_position = m_position;
             updateModelMatrix();
         }
 
         void setRotation(glm::vec3 rotation)
         {
             m_rotation = rotation;
+            imgui_rotation = m_rotation;
             updateModelMatrix();
         }
 
@@ -111,15 +123,17 @@ class SceneObject
         void setScale(float scale)
         {
             m_scale = glm::vec3(scale);
+            imgui_scale_f = scale;
             updateModelMatrix();
         }
 
         void setColor(glm::vec3 color) {
-            m_color = glm::vec4(color, 1.0f);
+            this->setColor(glm::vec4(color, 1.0f));
         }
 
         void setColor(glm::vec4 color) {
             m_color = color;
+            imgui_color = color;
         }
 
         void addChild(SceneObject* child)
@@ -159,6 +173,14 @@ class SceneObject
             dirty = true;
         }
 
+        void drawImGui() {
+            ImGui::SeparatorText(m_name.c_str());
+			if (ImGui::InputFloat3((m_name + " position").c_str(), (float*)&imgui_position)) { this->setPosition(imgui_position); }
+			if (ImGui::InputFloat3((m_name + " rotation").c_str(), (float*)&imgui_rotation)) { this->setRotation(imgui_rotation); }
+            if (ImGui::InputFloat((m_name + " scale").c_str(), (float*)&imgui_scale_f)) { this->setScale(imgui_scale_f); }
+            if (ImGui::ColorEdit3((m_name + " color").c_str(), (float*)&imgui_color)) { this->setColor(imgui_color); }
+        }
+
     protected:
         vector<SceneObject*>* children;
         SceneObject* parent;
@@ -166,10 +188,17 @@ class SceneObject
     private:
         glm::mat4 m_modelMatrix;
 
+        glm::vec3 imgui_position;
+        //glm::vec3 imgui_scale_v;
+        GLfloat imgui_scale_f;
+        glm::vec3 imgui_rotation;
+        glm::vec4 imgui_color;
+
         glm::vec3 m_position;
         glm::vec3 m_scale;
         glm::vec3 m_rotation;
         glm::vec4 m_color;
+        std::string m_name;
         
         bool dirty = true;
         glm::mat4 m_cached_composedModelMatrix;
