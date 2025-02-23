@@ -38,9 +38,10 @@ vec3 hatch()
     vec3 hatchColor = texture(hatchTexture, interp_UV * 10.0).rgb;
     vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, interp_UV).rgb);
     float lambertian = color_sample_hsv.z;
-    color_sample_hsv.y = 0.5f;
-    color_sample_hsv.z = 0.85f;
+    color_sample_hsv.y = 0.4f;
+    color_sample_hsv.z = 0.9f;
     vec3 color_sample_rgb = hsv2rgb(color_sample_hsv);
+    
     if(lambertian > 0.9)
     {
         // return paper;

@@ -94,7 +94,7 @@ vec3 LambertBW()
 
 void main(void)
 {
-    float lambertian = max(dot(normalize(lightDir), normalize(vNormal)), 0.0);
+    float lambertian = max(dot(normalize(lightDir), normalize(vNormal)), 0.05);
 
   	colorFrag = vec4(mix(lambertian * color(), vec3(1.0), lambertian > 0.9), 1.0);
 }
