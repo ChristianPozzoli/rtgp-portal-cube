@@ -34,7 +34,7 @@ vec3 hsv2rgb(vec3 c)
 
 vec3 hatch()
 {
-    vec3 paper = texture(paperTexture, interp_UV).rgb + 0.05;
+    //vec3 paper = texture(paperTexture, interp_UV).rgb + 0.05;
     vec3 hatchColor = texture(hatchTexture, interp_UV * 10.0).rgb;
     vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, interp_UV).rgb);
     float lambertian = color_sample_hsv.z;
@@ -83,7 +83,7 @@ void main()
     
     vec3 sampleTex_normal[9];
     vec3 sampleTex_depth[9];
-    vec4 paperTexture = texture(paperTexture, interp_UV);
+    //vec4 paperTexture = texture(paperTexture, interp_UV);
     //float paperOffset = (paperTexture.r + paperTexture.g + paperTexture.b) / 3.0;
     //paperOffset = paperOffset * 2.0 - 1.0;
     //paperOffset /= 100.0;
