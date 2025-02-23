@@ -1,29 +1,7 @@
-/*
-
-08_random_patterns.frag: a fragment shader with different noise-based effects
-
-N.B. 1)  "06_procedural_base.vert" must be used as vertex shader
-
-N.B. 2)  the different effects are implemented using Shaders Subroutines
-
-N.B. 3) we use simplex noise implementation from
-        https://github.com/stegu/webgl-noise//wiki
-        to generate the fragments colors
-
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2023/2024
-Master degree in Computer Science
-Universita' degli Studi di Milano
-
-*/
-
 #version 410 core
 
 const float PI = 3.14159265359;
 
-// output shader variable
 out vec4 colorFrag;
 
 in vec3 lightDir;
@@ -75,7 +53,7 @@ vec3 textureKernel() {
          1,  1,  1
     );
 
-    int SobelRight[9] = {
+    int SobelRight[9] = int[](
         //1, 0, -1,
         //1, 0, -1,
         //1, 0, -1
@@ -87,9 +65,9 @@ vec3 textureKernel() {
         3, 0, -3,
         10, 0, -10,
         3, 0, -3
-    };
+    );
 
-    int SobelDown[9] = {
+    int SobelDown[9] = int[](
         //1, 1, 1,
         //0, 0, 0,
         //-1, -1, -1
@@ -101,7 +79,7 @@ vec3 textureKernel() {
         3, 10, 3,
         0, 0, 0,
         -3, -10, -3
-    };
+    );
 
     
     vec3 sampleTex[9];
