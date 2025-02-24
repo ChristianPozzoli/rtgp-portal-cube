@@ -3,7 +3,6 @@
 in vec2 interp_UV;
 in vec3 lightDir;
 
-// output shader variable
 out vec4 colorFrag;
 
 uniform sampler2D normalTexture;
@@ -12,7 +11,62 @@ uniform sampler2D screenTexture;
 uniform sampler2D hatchTexture;
 uniform sampler2D paperTexture;
 
-const float offset = 1.0 / 2500.0;
+uniform float noise_frequency_edge = 100.0;
+uniform float noise_strength_edge = 0.002;
+uniform float noise_strength_color = 0.002;
+
+const float kernel_offset = 1.0 / 2500.0;
+
+
+//	Classic Perlin 2D Noise 
+//	by Stefan Gustavson (https://github.com/stegu/webgl-noise)
+//
+vec2 fade(vec2 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
+vec3 mod289(vec3 x) {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+vec4 mod289(vec4 x) {
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+vec4 permute(vec4 x) {
+     return mod289(((x*34.0)+1.0)*x);
+}
+
+float cnoise(vec2 P)
+{
+    vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+    vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
+    Pi = mod(Pi, 289.0);
+    vec4 ix = Pi.xzxz;
+    vec4 iy = Pi.yyww;
+    vec4 fx = Pf.xzxz;
+    vec4 fy = Pf.yyww;
+    vec4 i = permute(permute(ix) + iy);
+    vec4 gx = 2.0 * fract(i * 0.0243902439) - 1.0;
+    vec4 gy = abs(gx) - 0.5;
+    vec4 tx = floor(gx + 0.5);
+    gx = gx - tx;
+    vec2 g00 = vec2(gx.x,gy.x);
+    vec2 g10 = vec2(gx.y,gy.y);
+    vec2 g01 = vec2(gx.z,gy.z);
+    vec2 g11 = vec2(gx.w,gy.w);
+    vec4 norm = 1.79284291400159 - 0.85373472095314 * 
+    vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
+    g00 *= norm.x;
+    g01 *= norm.y;
+    g10 *= norm.z;
+    g11 *= norm.w;
+    float n00 = dot(g00, vec2(fx.x, fy.x));
+    float n10 = dot(g10, vec2(fx.y, fy.y));
+    float n01 = dot(g01, vec2(fx.z, fy.z));
+    float n11 = dot(g11, vec2(fx.w, fy.w));
+    vec2 fade_xy = fade(Pf.xy);
+    vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+    float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+    return 2.3 * n_xy;
+}
+//
+/////////////////////////////////////////////////////////////////
 
 vec3 rgb2hsv(vec3 c)
 {
@@ -32,48 +86,35 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-vec3 hatch()
+vec3 hatch(float noise)
 {
-    //vec3 paper = texture(paperTexture, interp_UV).rgb + 0.05;
-    vec3 hatchColor = texture(hatchTexture, interp_UV * 10.0).rgb;
-    vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, interp_UV).rgb);
+    vec2 noise_uv = interp_UV - noise * noise_strength_color;
+    vec3 hatchColor = texture(hatchTexture, interp_UV).rgb;
+    vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, noise_uv).rgb);
     float lambertian = color_sample_hsv.z;
     color_sample_hsv.y = 0.4f;
     color_sample_hsv.z = 0.9f;
     vec3 color_sample_rgb = hsv2rgb(color_sample_hsv);
     
-    if(lambertian > 0.9)
-    {
-        // return paper;
-        return vec3(1.0);
-    }
-    else if(lambertian > 0.5)
-    {
-        // return paper - hatchColor.rrr;
-        return color_sample_rgb - hatchColor.rrr;
-    }
-    else if (lambertian > 0.25)
-    {
-        // return paper - hatchColor.rrr - hatchColor.ggg;
-        return color_sample_rgb - hatchColor.rrr - hatchColor.ggg;
-    }
-    
-    // return (paper - hatchColor.rrr - hatchColor.ggg - hatchColor.bbb);
-    return (color_sample_rgb - hatchColor.rrr - hatchColor.ggg - hatchColor.bbb);
+    return lambertian >= 0.9 ? vec3(1.0) :
+            (color_sample_rgb -
+            hatchColor.rrr -
+            vec3(lambertian < 0.5 ? hatchColor.g : 0) -
+            vec3(lambertian < 0.25 ? hatchColor.b : 0));
 }
 
 void main()
 {
     vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset), // top-left
-        vec2( 0.0f,    offset), // top-center
-        vec2( offset,  offset), // top-right
-        vec2(-offset,  0.0f),   // center-left
+        vec2(-kernel_offset,  kernel_offset), // top-left
+        vec2( 0.0f,    kernel_offset), // top-center
+        vec2( kernel_offset,  kernel_offset), // top-right
+        vec2(-kernel_offset,  0.0f),   // center-left
         vec2( 0.0f,    0.0f),   // center-center
-        vec2( offset,  0.0f),   // center-right
-        vec2(-offset, -offset), // bottom-left
-        vec2( 0.0f,   -offset), // bottom-center
-        vec2( offset, -offset)  // bottom-right
+        vec2( kernel_offset,  0.0f),   // center-right
+        vec2(-kernel_offset, -kernel_offset), // bottom-left
+        vec2( 0.0f,   -kernel_offset), // bottom-center
+        vec2( kernel_offset, -kernel_offset)  // bottom-right
     );
 
     float kernel[9] = float[](
@@ -84,20 +125,17 @@ void main()
     
     vec3 sampleTex_normal[9];
     vec3 sampleTex_depth[9];
-    //vec4 paperTexture = texture(paperTexture, interp_UV);
-    //float paperOffset = (paperTexture.r + paperTexture.g + paperTexture.b) / 3.0;
-    //paperOffset = paperOffset * 2.0 - 1.0;
-    //paperOffset /= 100.0;
-    for(int i = 0; i < 9; i++)
-    {
-        sampleTex_normal[i] = vec3(texture(normalTexture, interp_UV + offsets[i]));
-        sampleTex_depth[i] = vec3(texture(depthTexture, interp_UV + offsets[i]));
-    }
-    
+
+    float noise = cnoise(interp_UV * noise_frequency_edge);
+    vec2 uv = interp_UV + noise * noise_strength_edge;
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
+    {
+        sampleTex_normal[i] = vec3(texture(normalTexture, uv + offsets[i]));
+        sampleTex_depth[i] = vec3(texture(depthTexture, uv + offsets[i]));
         col += sampleTex_normal[i] * kernel[i] + sampleTex_depth[i] * kernel[i];
-
-    col = length(col) >= 0.15 ? vec3(0.0) : hatch();
+    }
+    
+    col = length(col) >= 0.15 ? vec3(0.25) : hatch(noise);
     colorFrag = vec4(col, 1.0f);
 }

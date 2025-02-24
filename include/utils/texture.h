@@ -105,6 +105,7 @@ class Texture
                 std::cout << "Wrong number of channel in texture!" << std::endl;
                 glDeleteTextures(1, &m_textureName);
                 m_textureName = 0;
+                stbi_image_free(image);
                 return;
             }
             

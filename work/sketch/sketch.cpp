@@ -27,6 +27,7 @@
 // classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/texture.h>
+#include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
@@ -97,6 +98,10 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
+float noiseFrequencyEdge = 40.0f;
+float noiseStrengthEdge = 0.00175f;
+float noiseStrengthColor = 0.00175f;
+
 void setup_illum_shader(Shader&);
 
 /////////////////// MAIN function ///////////////////////
@@ -159,6 +164,7 @@ int main()
     Shader color_shader = Shader("basic.vert", "fullcolor.frag");
     Shader depth_shader = Shader("basic.vert", "depth.frag");
     Shader normal_shader = Shader("illumination_model.vert", "normal.frag");
+    Shader cubemap_shader = Shader("cubemap.vert", "cubemap.frag");
     Shader screen_shader = Shader("screen.vert", "screen.frag");
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
@@ -168,6 +174,9 @@ int main()
     Texture hatch_texture("../../textures/hatch_rgb.png");
     hatch_texture.setWrapS(GL_REPEAT);
     hatch_texture.setWrapT(GL_REPEAT);
+    
+    //TextureCubeMap hatch_texture_cubemap("../../textures/hatch_cubemap_hard/", ".jpg");
+    // TextureCubeMap hatch_texture_cubemap("../../textures/cube/NissiBeach/", ".jpg");
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
@@ -178,6 +187,9 @@ int main()
 
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ModelObject cubeMapObject("CubeMap", "../../models/sphere.obj", cubemap_shader);
+    cubeMapObject.setTexture(&hatch_texture);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -194,7 +206,6 @@ int main()
     glm::mat4 view = glm::mat4(1.0f);
 
     // RBO
-
     unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
@@ -202,7 +213,6 @@ int main()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     // NORMAL FBO
-
     unsigned int normal_fbo;
     glGenFramebuffers(1, &normal_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
@@ -233,6 +243,23 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depth_fbo_texture, 0);
+    
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    
+    // CUBAMAP FBO
+    unsigned int cubemap_fbo;
+    glGenFramebuffers(1, &cubemap_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemap_fbo);
+
+    unsigned int cubemap_fbo_texture;
+    glGenTextures(1, &cubemap_fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, cubemap_fbo_texture);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cubemap_fbo_texture, 0);
     
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -292,17 +319,23 @@ int main()
             ImGui::SeparatorText("Properties");
             ImGui::Checkbox("Wireframe", (bool*)&wireframe);
             ImGui::Checkbox("Spinning", (bool*)&spinning);
-
+            
             if (ImGui::CollapsingHeader("Objects")) {
                 for(auto i = mainScene.cbegin(); i != mainScene.cend(); ++i) {
                     (*i)->drawImGui();
                 }
             }
+            
+			if(ImGui::CollapsingHeader("Sketch Configuration"))
+			{
+                ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
+                ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
+                ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
+            }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
 				ImGui::InputFloat3("Light Position", (float*)&lightPos0);
-			    ImGui::SeparatorText("Cel shading parameters");
                 ImGui::SeparatorText("Illumination model parameters");
 				ImGui::SliderFloat("Kd", (float*)&Kd, 0.0f, 2.0f);
 				ImGui::SliderFloat("Ks", (float*)&Ks, 0.0f, 2.0f);
@@ -365,8 +398,28 @@ int main()
         // RENDER ON DEPTH FBO
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
         mainScene.draw(view, projection, &depth_shader);
+        
+        // RENDER ON CUBEMAP FBO
+        glBindFramebuffer(GL_FRAMEBUFFER, cubemap_fbo);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        // cubemap_shader.SetInt("tCube", 0);
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_CUBE_MAP, hatch_texture_cubemap.name());
+        
+        glDepthFunc(GL_LEQUAL);
+        glm::mat4 cubemapViewMatrix = glm::mat4(
+            camera.WorldFront.x, 0.0, - camera.WorldFront.z, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            camera.WorldFront.z, 0.0, camera.WorldFront.x, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        );
+        cubemap_shader.SetFloat("viewAngle", glm::asin(camera.Front.y));
+        cubeMapObject.draw(cubemapViewMatrix, projection);
+        glDepthFunc(GL_LESS);
         
         // RENDER ON SCREEN FBO
         glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
@@ -374,6 +427,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         mainScene.draw(view, projection);
+        
         
         // RENDER ON DEFAULT FBO
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -387,6 +441,10 @@ int main()
         screen_shader.SetInt("hatchTexture", 3);
         screen_shader.SetInt("paperTexture", 4);
         
+        screen_shader.SetFloat("noise_frequency_edge", noiseFrequencyEdge);
+        screen_shader.SetFloat("noise_strength_edge", noiseStrengthEdge);
+        screen_shader.SetFloat("noise_strength_color", noiseStrengthColor);
+        
         screen_shader.Use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
@@ -394,12 +452,15 @@ int main()
         glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
+        // glActiveTexture(GL_TEXTURE3);
+        // glBindTexture(GL_TEXTURE_2D, hatch_texture.name());
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, hatch_texture.name());
+        glBindTexture(GL_TEXTURE_2D, cubemap_fbo_texture);
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, paperTexture.name());
-        screen_quad.draw();
 
+        screen_quad.draw();
+        
         // Rendering imgui
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -414,6 +475,7 @@ int main()
     glDeleteRenderbuffers(1, &rbo);
     glDeleteFramebuffers(1, &normal_fbo);
     glDeleteFramebuffers(1, &depth_fbo);
+    glDeleteFramebuffers(1, &cubemap_fbo);
     glDeleteFramebuffers(1, &screen_fbo);
 
     // when I exit from the graphics loop, it is because the application is closing
