@@ -98,9 +98,14 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
+glm::vec3 backgroundColor = glm::vec3(1.0f);
+glm::vec3 edgeColor = glm::vec3(0.25f);
+float colorSaturation = 0.4f;
+float colorBrightness = 0.9f;
+float edgeThreshold = 0.005f;
 float noiseFrequencyEdge = 40.0f;
 float noiseStrengthEdge = 0.00175f;
-float noiseStrengthColor = 0.00175f;
+float noiseStrengthColor = 0.0025f;
 
 void setup_illum_shader(Shader&);
 
@@ -152,10 +157,8 @@ int main()
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
-    // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
 
@@ -328,6 +331,14 @@ int main()
             
 			if(ImGui::CollapsingHeader("Sketch Configuration"))
 			{
+                ImGui::SeparatorText("Colors");
+                ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
+                ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
+                ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
+                ImGui::SliderFloat("Color brightness", &colorBrightness, 0.0f, 1.0f);
+                ImGui::SeparatorText("Edge");
+                ImGui::SliderFloat("Edge threshold", &edgeThreshold, 0.0f, 2.0f, "%.3f");
+                ImGui::SeparatorText("Noise");
                 ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
                 ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
                 ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
@@ -417,7 +428,7 @@ int main()
             camera.WorldFront.z, 0.0, camera.WorldFront.x, 0.0,
             0.0, 0.0, 0.0, 1.0
         );
-        cubemap_shader.SetFloat("viewAngle", glm::asin(camera.Front.y));
+        cubemap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
         cubeMapObject.draw(cubemapViewMatrix, projection);
         glDepthFunc(GL_LESS);
         
@@ -441,6 +452,11 @@ int main()
         screen_shader.SetInt("hatchTexture", 3);
         screen_shader.SetInt("paperTexture", 4);
         
+        screen_shader.SetVec3("background_color", 1, glm::value_ptr(backgroundColor));
+        screen_shader.SetVec3("edge_color", 1, glm::value_ptr(edgeColor));
+        screen_shader.SetFloat("color_saturation", colorSaturation);
+        screen_shader.SetFloat("color_brightness", colorBrightness);
+        screen_shader.SetFloat("edge_threshold", edgeThreshold);
         screen_shader.SetFloat("noise_frequency_edge", noiseFrequencyEdge);
         screen_shader.SetFloat("noise_strength_edge", noiseStrengthEdge);
         screen_shader.SetFloat("noise_strength_color", noiseStrengthColor);

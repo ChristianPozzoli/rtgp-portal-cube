@@ -36,15 +36,15 @@ vec3 textureKernel() {
   float offset = 1.0 / offset_factor;
 
   vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset), // top-left
-        vec2( 0.0f,    offset), // top-center
-        vec2( offset,  offset), // top-right
-        vec2(-offset,  0.0f),   // center-left
-        vec2( 0.0f,    0.0f),   // center-center
-        vec2( offset,  0.0f),   // center-right
-        vec2(-offset, -offset), // bottom-left
-        vec2( 0.0f,   -offset), // bottom-center
-        vec2( offset, -offset)  // bottom-right
+        vec2(-offset,  offset),
+        vec2( 0.0f,    offset),
+        vec2( offset,  offset),
+        vec2(-offset,  0.0f),
+        vec2( 0.0f,    0.0f),
+        vec2( offset,  0.0f),
+        vec2(-offset, -offset),
+        vec2( 0.0f,   -offset),
+        vec2( offset, -offset)
     );
 
     float outline_kernel[9] = float[](
@@ -54,28 +54,34 @@ vec3 textureKernel() {
     );
 
     int SobelRight[9] = int[](
+        //Prewitt operator sobel
         //1, 0, -1,
         //1, 0, -1,
         //1, 0, -1
         
+        //Classic sobel
         //1, 0, -1,
         //2, 0, -2,
         //1, 0, -1
 
+        // Sobel–Feldman operator
         3, 0, -3,
         10, 0, -10,
         3, 0, -3
     );
 
     int SobelDown[9] = int[](
+        //Prewitt operator sobel
         //1, 1, 1,
         //0, 0, 0,
         //-1, -1, -1
         
+        //Classic sobel
         //1, 2, 1,
         //0, 0, 0,
         //-1, -2, -1
         
+        // Sobel–Feldman operator
         3, 10, 3,
         0, 0, 0,
         -3, -10, -3
@@ -120,7 +126,7 @@ vec3 CelShading()
     vec3 V = normalize(vViewPosition);
     vec3 L = normalize(lightDir);
 
-    float vnDot= max(dot(V, N), 0.0);
+    //float vnDot= max(dot(V, N), 0.0);
 
     // if(vnDot <= thickness && vnDot >= -thickness)
     // {
@@ -131,13 +137,7 @@ vec3 CelShading()
 
     vec3 lut_color = texture(LUT, vec2(lambertian, 0.0)).rgb;
     float specular_lambertian = max((lambertian - gloss_threshold), 0.0) / (1 - gloss_threshold);
-    //vec3 specular_color = texture(LUT, vec2(specular_lambertian, 0.0)).rgb * vec3(0.5);
     vec3 specular_color = specular_lambertian * vec3(gloss_factor);
-
-    vec3 R = reflect(-L, N);
-
-    float specAngle = max(dot(R, V), 0.0);
-    float specular = pow(specAngle, 25);
     
     return lut_color * color() + specular_color;
 }

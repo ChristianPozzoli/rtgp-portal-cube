@@ -161,7 +161,7 @@ Scene* currentScene = nullptr;
 unordered_map<PlaneObject*, Scene*> planeCubeMap;
 
 void setup_illum_shader(Shader&);
-void setup_npr_shading(Shader&);
+void setup_cel_shading(Shader&);
 
 glm::mat4 ModifyProjectionMatrix(const glm::mat4& projection, const glm::vec4& clipPlane);
 
@@ -482,7 +482,7 @@ int main()
         glDepthMask(0xFF);
 		
         setup_illum_shader(illum_shader);
-        setup_npr_shading(cel_shading);
+        setup_cel_shading(cel_shading);
         
         for (uint8_t i = 0; i < visiblePlanesSize; ++i)
         {
@@ -777,7 +777,7 @@ void setup_illum_shader(Shader& illum_shader)
     glUniform1f(f0Location, F0);
 }
 
-void setup_npr_shading(Shader& cel_shading)
+void setup_cel_shading(Shader& cel_shading)
 {
     cel_shading.Use(subroutines[current_subroutine]);
 

@@ -11,6 +11,11 @@ uniform sampler2D screenTexture;
 uniform sampler2D hatchTexture;
 uniform sampler2D paperTexture;
 
+uniform vec3 background_color = vec3(1.0);
+uniform vec3 edge_color = vec3(0.25);
+uniform float color_saturation = 0.4;
+uniform float color_brightness = 0.9;
+uniform float edge_threshold = 0.15;
 uniform float noise_frequency_edge = 100.0;
 uniform float noise_strength_edge = 0.002;
 uniform float noise_strength_color = 0.002;
@@ -92,11 +97,11 @@ vec3 hatch(float noise)
     vec3 hatchColor = texture(hatchTexture, interp_UV).rgb;
     vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, noise_uv).rgb);
     float lambertian = color_sample_hsv.z;
-    color_sample_hsv.y = 0.4f;
-    color_sample_hsv.z = 0.9f;
+    color_sample_hsv.y = color_saturation;
+    color_sample_hsv.z = color_brightness;
     vec3 color_sample_rgb = hsv2rgb(color_sample_hsv);
     
-    return lambertian >= 0.9 ? vec3(1.0) :
+    return lambertian >= 0.9 ? background_color :
             (color_sample_rgb -
             hatchColor.rrr -
             vec3(lambertian < 0.5 ? hatchColor.g : 0) -
@@ -107,16 +112,17 @@ void main()
 {
     vec2 offsets[9] = vec2[](
         vec2(-kernel_offset,  kernel_offset), // top-left
-        vec2( 0.0f,    kernel_offset), // top-center
+        vec2( 0.0f,           kernel_offset), // top-center
         vec2( kernel_offset,  kernel_offset), // top-right
-        vec2(-kernel_offset,  0.0f),   // center-left
-        vec2( 0.0f,    0.0f),   // center-center
-        vec2( kernel_offset,  0.0f),   // center-right
+        vec2(-kernel_offset,  0.0f),          // center-left
+        vec2( 0.0f,           0.0f),          // center-center
+        vec2( kernel_offset,  0.0f),          // center-right
         vec2(-kernel_offset, -kernel_offset), // bottom-left
-        vec2( 0.0f,   -kernel_offset), // bottom-center
+        vec2( 0.0f,          -kernel_offset), // bottom-center
         vec2( kernel_offset, -kernel_offset)  // bottom-right
     );
 
+    // Edge detection kernel
     float kernel[9] = float[](
          1,  1,  1,
          1, -8,  1,
@@ -126,6 +132,7 @@ void main()
     vec3 sampleTex_normal[9];
     vec3 sampleTex_depth[9];
 
+    // Noise in order to give a sketch line and imprecise coloration
     float noise = cnoise(interp_UV * noise_frequency_edge);
     vec2 uv = interp_UV + noise * noise_strength_edge;
     vec3 col = vec3(0.0);
@@ -136,6 +143,8 @@ void main()
         col += sampleTex_normal[i] * kernel[i] + sampleTex_depth[i] * kernel[i];
     }
     
-    col = length(col) >= 0.15 ? vec3(0.25) : hatch(noise);
+    col = edge_threshold > 0 && dot(col, col) >= edge_threshold ?
+            edge_color :
+            hatch(noise);
     colorFrag = vec4(col, 1.0f);
 }

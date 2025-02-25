@@ -136,7 +136,19 @@ GLfloat gloss_threshold = 0.95f;
 GLfloat gloss_factor = 0.25f;
 
 void setup_illum_shader(Shader&);
-void setup_npr_shading(Shader&);
+void setup_cel_shading(Shader&);
+
+int lut_current_index = 2;
+const char* lut_items[] = {
+    "LUT_cel_shading_1.png",
+    "LUT_cel_shading_2.png",
+    "LUT_cel_shading_3.png",
+    "LUT_cel_shading_4.png",
+    "LUT_cel_shading_5.png",
+    "LUT_cel_shading_6.png",
+    "LUT_cel_shading_7.png",
+    "LUT_cel_shading_8.png",
+};
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -208,9 +220,11 @@ int main()
     PrintCurrentShader(current_subroutine);
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
-    Texture lut_cel_shading_texture("../../textures/cel_shading_scene/LUT_cel_shading_3.png", GL_CLAMP_TO_EDGE, GL_NEAREST, GL_NEAREST);
-    lut_cel_shading_texture.setWrapS(GL_CLAMP_TO_EDGE);
-    lut_cel_shading_texture.setWrapT(GL_REPEAT);
+    Texture* lut_cel_shading_texture = new Texture(
+        ("../../textures/cel_shading_scene/" + string(lut_items[lut_current_index])).c_str(),
+        GL_CLAMP_TO_EDGE,
+        GL_NEAREST,
+        GL_NEAREST);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -237,7 +251,7 @@ int main()
     Texture teddyTexture2("../../textures/cel_shading_scene/teddybear_2.png");
     teddyObject2.setTexture(&teddyTexture2);
     
-    ModelObject spidermanObject("Spiderman", "../../models/cel_shading_scene/spiderman_toy_lp.gltf", cel_shading, glm::vec3(1.2f, -1.08f, 0.0), 0.15f, glm::vec3(-90.0f, 0.0, 0.0));
+    ModelObject spidermanObject("Spiderman", "../../models/cel_shading_scene/spiderman_toy_lp.gltf", cel_shading, glm::vec3(1.2f, -1.07f, 0.0), 0.15f, glm::vec3(-90.0f, 0.0, 0.0));
     Texture spidermanTexture("../../textures/cel_shading_scene/spiderman_toy.png");
     spidermanObject.setTexture(&spidermanTexture);
     
@@ -304,6 +318,18 @@ int main()
             ImGui::SeparatorText("Shaders");
             
 			if(ImGui::CollapsingHeader("Cel Shading Configuration")) {
+                ImGui::SeparatorText("LUTs");
+                if (ImGui::Combo("LUT", &lut_current_index, lut_items, IM_ARRAYSIZE(lut_items))) {
+                    if(lut_current_index >= 0) {
+                        delete(lut_cel_shading_texture);
+                        lut_cel_shading_texture = 
+                            new Texture(("../../textures/cel_shading_scene/" + string(lut_items[lut_current_index])).c_str(),
+                                            GL_CLAMP_TO_EDGE,
+                                            GL_NEAREST,
+                                            GL_NEAREST);
+                    }
+                }
+                ImGui::SeparatorText("Texture");
                 ImGui::InputFloat("Texture Offset Factor", (float*)&cel_shading_texture_offset_factor, 1.0f, 10000.0f);
                 ImGui::SliderFloat("Texture Outline Threshold Lower", (float*)&cel_shading_texture_outline_threshold_lower, 0.0f, 50.0f);
                 ImGui::SliderFloat("Texture Outline Threshold Upper", (float*)&cel_shading_texture_outline_threshold_upper, 0.0f, 50.0f);
@@ -314,7 +340,6 @@ int main()
                 ImGui::SliderFloat("Gloss factor", (float*)&gloss_factor, 0.0f, 1.0f);
                 ImGui::SeparatorText("Outline");
                 ImGui::SliderFloat("Vectors along normals", (float*)&along_normals_factor, 0.0f, 0.015f, "%.5f");
-                
             }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
@@ -358,10 +383,10 @@ int main()
             orientationY+=(deltaTime*spin_speed);
         }
 
-        setup_npr_shading(cel_shading);
+        setup_cel_shading(cel_shading);
         cel_shading.SetInt("LUT", 1);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, lut_cel_shading_texture.name());
+        glBindTexture(GL_TEXTURE_2D, lut_cel_shading_texture->name());
         
         back_face_shader.Use();
         back_face_shader.SetFloat("alongNormalsFactor", along_normals_factor);
@@ -390,6 +415,7 @@ int main()
     illum_shader.Delete();
     cel_shading.Delete();
     back_face_shader.Delete();
+    delete(lut_cel_shading_texture);
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -592,7 +618,7 @@ void setup_illum_shader(Shader& illum_shader)
     glUniform1f(f0Location, F0);
 }
 
-void setup_npr_shading(Shader& cel_shading)
+void setup_cel_shading(Shader& cel_shading)
 {
     cel_shading.Use(subroutines[current_subroutine]);
 
