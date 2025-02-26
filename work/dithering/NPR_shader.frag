@@ -1,24 +1,3 @@
-/*
-
-08_random_patterns.frag: a fragment shader with different noise-based effects
-
-N.B. 1)  "06_procedural_base.vert" must be used as vertex shader
-
-N.B. 2)  the different effects are implemented using Shaders Subroutines
-
-N.B. 3) we use simplex noise implementation from
-        https://github.com/stegu/webgl-noise//wiki
-        to generate the fragments colors
-
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2023/2024
-Master degree in Computer Science
-Universita' degli Studi di Milano
-
-*/
-
 #version 410 core
 
 const float PI = 3.14159265359;
@@ -90,7 +69,52 @@ vec3 CelShading() // this name is the one which is detected by the SetupShaders(
     return lambertian * color();
 }
 
+vec3 SmoothContouringCelShading() {
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(vViewPosition);
+    vec3 L = normalize(lightDir);
+
+    float vnDot= abs(dot(V, N));
+
+    float lambertian = max(dot(L, N), 0.0);
+
+    if(lambertian > 0.97)
+    {
+        return 0.8 * vec3(1.0) + 0.2 * color();
+    }
+    else if(lambertian > 0.9)
+    {
+        lambertian = 1;
+    }
+    else if(lambertian > 0.75)
+    {
+        lambertian = 0.75;
+    }
+    else if (lambertian > 0.5)
+    {
+        lambertian = 0.5;
+    }
+    else if (lambertian > 0.25)
+    {
+        lambertian = 0.25;
+    }
+    else
+    {
+        lambertian = .1;
+    }
+    
+    return mix(vec3(0), lambertian * color(), smoothstep(0.2, 0.4, vnDot));
+}
+
+vec3 ContourEdges() {
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(vViewPosition);
+
+    float vnDot= abs(dot(V, N));
+    return mix(vec3(0), vec3(1), smoothstep(0.2, 0.4, vnDot));
+}
+
 void main(void)
 {
-  	colorFrag = vec4(CelShading(), 1.);
+  	colorFrag = vec4(SmoothContouringCelShading(), 1.);
 }

@@ -191,6 +191,14 @@ public:
         glUniform3fv(location, count, value);
     }
 
+    void SetVec2(string name, int count, const float* value)
+    {
+        Use();
+        GLint location = glGetUniformLocation(this->Program, name.c_str());
+        if(location == -1) return;
+        glUniform2fv(location, count, value);
+    }
+
     void Use(string subroutine = string())
     {
         glUseProgram(this->Program); // Installs the program object specified by program as part of current rendering state

@@ -27,7 +27,7 @@
 // classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/texture.h>
-#include <utils/texturespheremap.h>
+#include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
@@ -98,15 +98,8 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
-float hatchingRepeat = 40.0f;
-glm::vec3 backgroundColor = glm::vec3(1.0f);
-glm::vec3 edgeColor = glm::vec3(0.25f);
-float colorSaturation = 0.4f;
-float colorBrightness = 0.9f;
-float edgeThreshold = 0.005f;
-float noiseFrequencyEdge = 40.0f;
-float noiseStrengthEdge = 0.00175f;
-float noiseStrengthColor = 0.0025f;
+GLint colorFactor = 2.0f;
+GLint ditherFactor = 1.0f;
 
 void setup_illum_shader(Shader&);
 
@@ -128,7 +121,7 @@ int main()
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
     // we create the application's window
-    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Sketch", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "Dither", nullptr, nullptr);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -171,28 +164,19 @@ int main()
     Shader spheremap_shader = Shader("spheremap.vert", "spheremap.frag");
     Shader screen_shader = Shader("screen.vert", "screen.frag");
 
-    Texture uvTexture("../../textures/UV_Grid_Sm.png");
-    Texture paperTexture("../../textures/paper_3000.jpg");
-    paperTexture.setWrapS(GL_REPEAT);
-    paperTexture.setWrapT(GL_REPEAT);
     Texture hatch_texture("../../textures/hatch_rgb.png");
     hatch_texture.setWrapS(GL_REPEAT);
     hatch_texture.setWrapT(GL_REPEAT);
-    
-    //TexturesphereMap hatch_texture_spheremap("../../textures/hatch_spheremap_hard/", ".jpg");
-    // TexturesphereMap hatch_texture_spheremap("../../textures/cube/NissiBeach/", ".jpg");
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-    bunnyObject.setTexture(&uvTexture);
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
 
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
-    cubeObject.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
 
-    ModelObject spheremapObject("sphereMap", "../../models/sphere.obj", spheremap_shader);
+    ModelObject spheremapObject("CubeMap", "../../models/sphere.obj", spheremap_shader);
     spheremapObject.setTexture(&hatch_texture);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -330,21 +314,10 @@ int main()
                 }
             }
             
-			if(ImGui::CollapsingHeader("Sketch Configuration"))
+			if(ImGui::CollapsingHeader("Dither Configuration"))
 			{
-                ImGui::SeparatorText("Hatch");
-                ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
-                ImGui::SeparatorText("Colors");
-                ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
-                ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
-                ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
-                ImGui::SliderFloat("Color brightness", &colorBrightness, 0.0f, 1.0f);
-                ImGui::SeparatorText("Edge");
-                ImGui::SliderFloat("Edge threshold", &edgeThreshold, 0.0f, 2.0f, "%.3f");
-                ImGui::SeparatorText("Noise");
-                ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
-                ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
-                ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
+                ImGui::SliderInt("Color Factor", &colorFactor, 0.0f, 10.0f);
+                ImGui::SliderInt("Dither Factor", &ditherFactor, 1.0f, 24.0f);
             }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
@@ -396,6 +369,7 @@ int main()
         }
 
         setup_illum_shader(illum_shader);
+
         normal_shader.Use();
         normal_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
         
@@ -415,7 +389,7 @@ int main()
         
         mainScene.draw(view, projection, &depth_shader);
         
-        // RENDER ON spherEMAP FBO
+        // RENDER ON CUBEMAP FBO
         glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -428,7 +402,6 @@ int main()
             0.0, 0.0, 0.0, 1.0
         );
         spheremap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
-        spheremap_shader.SetFloat("hatching_repeat", hatchingRepeat);
         spheremapObject.draw(spheremapViewMatrix, projection);
         glDepthFunc(GL_LESS);
         
@@ -449,17 +422,11 @@ int main()
         screen_shader.SetInt("normalTexture", 0);
         screen_shader.SetInt("depthTexture", 1);
         screen_shader.SetInt("screenTexture", 2);
-        screen_shader.SetInt("hatchTexture", 3);
-        screen_shader.SetInt("paperTexture", 4);
-        
-        screen_shader.SetVec3("background_color", 1, glm::value_ptr(backgroundColor));
-        screen_shader.SetVec3("edge_color", 1, glm::value_ptr(edgeColor));
-        screen_shader.SetFloat("color_saturation", colorSaturation);
-        screen_shader.SetFloat("color_brightness", colorBrightness);
-        screen_shader.SetFloat("edge_threshold", edgeThreshold);
-        screen_shader.SetFloat("noise_frequency_edge", noiseFrequencyEdge);
-        screen_shader.SetFloat("noise_strength_edge", noiseStrengthEdge);
-        screen_shader.SetFloat("noise_strength_color", noiseStrengthColor);
+        screen_shader.SetInt("mapTexture", 3);
+
+        screen_shader.SetVec2("screen_size", 1, glm::value_ptr(glm::vec2(screenWidth, screenHeight)));
+        screen_shader.SetFloat("color_factor", colorFactor);
+        screen_shader.SetFloat("dither_factor", ditherFactor);
         
         screen_shader.Use();
         glActiveTexture(GL_TEXTURE0);
@@ -468,12 +435,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
-        // glActiveTexture(GL_TEXTURE3);
-        // glBindTexture(GL_TEXTURE_2D, hatch_texture.name());
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, paperTexture.name());
 
         screen_quad.draw();
         
