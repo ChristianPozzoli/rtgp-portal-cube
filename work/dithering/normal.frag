@@ -23,10 +23,5 @@ out vec4 colorFrag;
 void main()
 {
     vec3 norm_col = (normalize(vNormal) / 2.0) + 0.5;
-    float lambertian = max(dot(normalize(lightDir), normalize(vNormal)), 0.0);
-    if (lambertian > 0.9f)
-    {
-        norm_col = 1 - norm_col;
-    }
     colorFrag = vec4(norm_col, 1.0f);
 }

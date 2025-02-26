@@ -76,5 +76,5 @@ vec3 LambertBW()
 
 void main(void)
 {
-    colorFrag = vec4(LambertBW(), 1.0);
+  colorFrag = vec4(LambertBW(), 1.0);
 }

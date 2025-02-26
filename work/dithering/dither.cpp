@@ -98,8 +98,8 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
-GLint colorFactor = 2.0f;
-GLint ditherFactor = 1.0f;
+GLint colorFactor = 8;
+GLint ditherFactor = 2;
 
 void setup_illum_shader(Shader&);
 
@@ -170,11 +170,14 @@ int main()
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-
+    bunnyObject.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+    
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
-
+    sphereObject.setColor(glm::vec3(1.0f, 1.0f, 0.0f));
+    
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
+    cubeObject.setColor(glm::vec3(0.1f, 0.3f, 1.0f));
 
     ModelObject spheremapObject("CubeMap", "../../models/sphere.obj", spheremap_shader);
     spheremapObject.setTexture(&hatch_texture);
@@ -218,19 +221,19 @@ int main()
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     
     // DEPTH FBO
-    unsigned int depth_fbo;
-    glGenFramebuffers(1, &depth_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+    unsigned int color_fbo;
+    glGenFramebuffers(1, &color_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
 
-    unsigned int depth_fbo_texture;
-    glGenTextures(1, &depth_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
+    unsigned int color_fbo_texture;
+    glGenTextures(1, &color_fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depth_fbo_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_fbo_texture, 0);
     
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     
@@ -384,10 +387,10 @@ int main()
         mainScene.draw(view, projection, &normal_shader);
 
         // RENDER ON DEPTH FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        mainScene.draw(view, projection, &depth_shader);
+        mainScene.draw(view, projection, &color_shader);
         
         // RENDER ON CUBEMAP FBO
         glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
@@ -420,7 +423,7 @@ int main()
         glDisable(GL_DEPTH_TEST);
 
         screen_shader.SetInt("normalTexture", 0);
-        screen_shader.SetInt("depthTexture", 1);
+        screen_shader.SetInt("colorTexture", 1);
         screen_shader.SetInt("screenTexture", 2);
         screen_shader.SetInt("mapTexture", 3);
 
@@ -432,7 +435,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
         glActiveTexture(GL_TEXTURE3);
@@ -453,7 +456,7 @@ int main()
 
     glDeleteRenderbuffers(1, &rbo);
     glDeleteFramebuffers(1, &normal_fbo);
-    glDeleteFramebuffers(1, &depth_fbo);
+    glDeleteFramebuffers(1, &color_fbo);
     glDeleteFramebuffers(1, &spheremap_fbo);
     glDeleteFramebuffers(1, &screen_fbo);
 
