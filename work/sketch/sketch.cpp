@@ -98,6 +98,7 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
+float hatchingRepeat = 40.0f;
 glm::vec3 backgroundColor = glm::vec3(1.0f);
 glm::vec3 edgeColor = glm::vec3(0.25f);
 float colorSaturation = 0.4f;
@@ -167,7 +168,7 @@ int main()
     Shader color_shader = Shader("basic.vert", "fullcolor.frag");
     Shader depth_shader = Shader("basic.vert", "depth.frag");
     Shader normal_shader = Shader("illumination_model.vert", "normal.frag");
-    Shader cubemap_shader = Shader("cubemap.vert", "cubemap.frag");
+    Shader spheremap_shader = Shader("spheremap.vert", "spheremap.frag");
     Shader screen_shader = Shader("screen.vert", "screen.frag");
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
@@ -191,8 +192,8 @@ int main()
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
 
-    ModelObject cubeMapObject("CubeMap", "../../models/sphere.obj", cubemap_shader);
-    cubeMapObject.setTexture(&hatch_texture);
+    ModelObject spheremapObject("CubeMap", "../../models/sphere.obj", spheremap_shader);
+    spheremapObject.setTexture(&hatch_texture);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -331,6 +332,8 @@ int main()
             
 			if(ImGui::CollapsingHeader("Sketch Configuration"))
 			{
+                ImGui::SeparatorText("Hatch");
+                ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
                 ImGui::SeparatorText("Colors");
                 ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
                 ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
@@ -417,19 +420,16 @@ int main()
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        // cubemap_shader.SetInt("tCube", 0);
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_CUBE_MAP, hatch_texture_cubemap.name());
-        
         glDepthFunc(GL_LEQUAL);
-        glm::mat4 cubemapViewMatrix = glm::mat4(
+        glm::mat4 spheremapViewMatrix = glm::mat4(
             camera.WorldFront.x, 0.0, - camera.WorldFront.z, 0.0,
             0.0, 1.0, 0.0, 0.0,
             camera.WorldFront.z, 0.0, camera.WorldFront.x, 0.0,
             0.0, 0.0, 0.0, 1.0
         );
-        cubemap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
-        cubeMapObject.draw(cubemapViewMatrix, projection);
+        spheremap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
+        spheremap_shader.SetFloat("hatching_repeat", hatchingRepeat);
+        spheremapObject.draw(spheremapViewMatrix, projection);
         glDepthFunc(GL_LESS);
         
         // RENDER ON SCREEN FBO
