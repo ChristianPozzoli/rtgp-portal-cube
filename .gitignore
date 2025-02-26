@@ -1,4 +1,5 @@
 .vscode/
+.vs/
 work/**/*.obj
 *.exe
 *.ilk
