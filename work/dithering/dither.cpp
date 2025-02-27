@@ -159,6 +159,7 @@ int main()
     // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader illum_shader = Shader("illumination_model.vert", "illumination_model.frag");
     Shader color_shader = Shader("basic.vert", "fullcolor.frag");
+    Shader wireframe_shader = Shader("basic.vert", "wireframe.frag");
     Shader depth_shader = Shader("basic.vert", "depth.frag");
     Shader normal_shader = Shader("illumination_model.vert", "normal.frag");
     Shader spheremap_shader = Shader("spheremap.vert", "spheremap.frag");
@@ -204,19 +205,19 @@ int main()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     // NORMAL FBO
-    unsigned int normal_fbo;
-    glGenFramebuffers(1, &normal_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
+    unsigned int wireframe_fbo;
+    glGenFramebuffers(1, &wireframe_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, wireframe_fbo);
 
-    unsigned int normal_fbo_texture;
-    glGenTextures(1, &normal_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
+    unsigned int wireframe_fbo_texture;
+    glGenTextures(1, &wireframe_fbo_texture);
+    glBindTexture(GL_TEXTURE_2D, wireframe_fbo_texture);
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normal_fbo_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, wireframe_fbo_texture, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     
@@ -353,11 +354,11 @@ int main()
         ///////////////////
 
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-
+        
         if (spinning)
         {
             orientationY+=(deltaTime*spin_speed);
-
+            
             glm::vec3 rotation = bunnyObject.rotation();
             rotation.y = orientationY;
             bunnyObject.setRotation(rotation);
@@ -365,34 +366,44 @@ int main()
             rotation = cubeObject.rotation();
             rotation.y = orientationY;
             cubeObject.setRotation(rotation);
-
+            
             rotation = sphereObject.rotation();
             rotation.y = orientationY;
             sphereObject.setRotation(rotation);
         }
-
+        
         setup_illum_shader(illum_shader);
-
+        
         normal_shader.Use();
         normal_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
         
         glEnable(GL_DEPTH_TEST);
-
+        
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
+        
         // RENDER ON NORMAL FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, wireframe_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
         mainScene.draw(view, projection, &normal_shader);
-
-        // RENDER ON DEPTH FBO
+        
+        // RENDER ON COLOR FBO
         glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         mainScene.draw(view, projection, &color_shader);
         
-        // RENDER ON CUBEMAP FBO
+        glBindFramebuffer(GL_FRAMEBUFFER, wireframe_fbo);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDepthFunc(GL_LEQUAL);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glLineWidth(5.0f);
+        mainScene.draw(view, projection, &wireframe_shader);
+        glLineWidth(1.0f);
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+        glDepthFunc(GL_LESS);
+        
+        // RENDER ON SPHEREMAP FBO
         glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -412,7 +423,7 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        
         mainScene.draw(view, projection);
         
         
@@ -421,19 +432,19 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDisable(GL_DEPTH_TEST);
-
-        screen_shader.SetInt("normalTexture", 0);
+        
+        screen_shader.SetInt("wireframeTexture", 0);
         screen_shader.SetInt("colorTexture", 1);
         screen_shader.SetInt("screenTexture", 2);
         screen_shader.SetInt("mapTexture", 3);
-
+        
         screen_shader.SetVec2("screen_size", 1, glm::value_ptr(glm::vec2(screenWidth, screenHeight)));
         screen_shader.SetFloat("color_factor", colorFactor);
         screen_shader.SetFloat("dither_factor", ditherFactor);
         
         screen_shader.Use();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, wireframe_fbo_texture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
         glActiveTexture(GL_TEXTURE2);
@@ -455,7 +466,7 @@ int main()
 	ImGui::DestroyContext();
 
     glDeleteRenderbuffers(1, &rbo);
-    glDeleteFramebuffers(1, &normal_fbo);
+    glDeleteFramebuffers(1, &wireframe_fbo);
     glDeleteFramebuffers(1, &color_fbo);
     glDeleteFramebuffers(1, &spheremap_fbo);
     glDeleteFramebuffers(1, &screen_fbo);
