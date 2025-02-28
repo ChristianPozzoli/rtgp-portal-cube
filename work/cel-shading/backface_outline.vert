@@ -24,3 +24,16 @@ void main()
     vec4 outlineOffset = vec4(vNormal.xy * alongNormalsFactor * gl_Position.w, 0.0f, 0.0f);
     gl_Position = gl_Position + outlineOffset;
 }
+
+// void main()
+// {
+//     mat4 scale_m = mat4(1.0);
+//     scale_m[0][0] = alongNormalsFactor;
+//     scale_m[1][1] = alongNormalsFactor;
+//     scale_m[2][2] = alongNormalsFactor;
+// 	vec4 mvPosition = viewMatrix * modelMatrix * scale_m * vec4(position, 1.0);
+	
+// 	vNormal = normalize(normalMatrix * normal);
+
+//     gl_Position = projectionMatrix * mvPosition;
+// }

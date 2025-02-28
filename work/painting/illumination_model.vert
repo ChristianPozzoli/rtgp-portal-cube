@@ -31,27 +31,20 @@ uniform vec3 pointLightPosition;
 
 out vec3 lightDir;
 out vec3 vNormal;
-flat out vec3 flat_normal;
 out vec3 vViewPosition;
 out vec2 interp_UV;
-
-flat out vec3 origin;
-out vec3 cameraDir;
 
 void main()
 {
 	interp_UV = UV;
 	vec4 mvPosition = viewMatrix * modelMatrix * vec4(position, 1.0);
-	origin = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 
 	vViewPosition = -mvPosition.xyz;
-	cameraDir = mat3(viewMatrix) * vec3(0.0, 0.0, 1.0);
 
 	vec4 lightPos = viewMatrix * vec4(pointLightPosition, 1.0f);
 	lightDir = lightPos.xyz - mvPosition.xyz;
 	
 	vNormal = normalize(normalMatrix * normal);
-	flat_normal = vNormal;
 
     gl_Position = projectionMatrix * mvPosition;
 }

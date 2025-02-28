@@ -14,12 +14,8 @@ Universita' degli Studi di Milano
 #version 410 core
 
 in vec3 vNormal;
-flat in vec3 flat_normal;
 in vec3 vViewPosition;
 in vec3 lightDir;
-
-flat in vec3 origin;
-in vec3 cameraDir;
 
 // output shader variable
 out vec4 colorFrag;
@@ -27,17 +23,7 @@ out vec4 colorFrag;
 
 void main()
 {
-    vec3 normal = normalize(cross(dFdx(vViewPosition), dFdy(vViewPosition)));
-    vec3 norm_col = (normal / 2.0) + 0.5;
-
-
-	float light = (dot(flat_normal, vec3(0.0, 0.0, 1.0)) + 1.0) * 0.5;
-
-    vec3 area = vec3(100.0);
-	vec3 color = ((origin + area) * 0.5) / area;
-	color.r *= light;
-	color.g /= light;
-	color = fract(color * 100);
-
-    colorFrag = vec4(1 - color, 1.0f);
+    vec3 norm_col = (vNormal / 2.0) + 0.5;
+    
+	colorFrag = vec4(norm_col, 1.0f);
 }

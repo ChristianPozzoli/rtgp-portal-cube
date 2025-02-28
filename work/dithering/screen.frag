@@ -48,5 +48,5 @@ void main()
     int frag_y = int(mod(gl_FragCoord.y / dither_factor, MAT_SIZE));
     vec3 pattern_color = vec3(diff < indexMatrix[(frag_x + frag_y * MAT_SIZE)] / 16.0 ? dither_color : 1 - dither_color);
     color = pattern_color * texture(colorTexture, uv).rgb;
-    colorFrag = texture(normalTexture, interp_UV);//vec4(color, 1.0);
+    colorFrag = vec4(color, 1.0);
 }

@@ -179,7 +179,8 @@ int main()
     
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.1f, 0.3f, 1.0f));
-
+    ModelObject cubeObject_2("Cube2", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
+    
     ModelObject spheremapObject("CubeMap", "../../models/sphere.obj", spheremap_shader);
     spheremapObject.setTexture(&hatch_texture);
 
@@ -193,6 +194,7 @@ int main()
     mainScene.add_object(&floorObject);
     mainScene.add_object(&bunnyObject);
     mainScene.add_object(&cubeObject);
+    mainScene.add_object(&cubeObject_2);
     mainScene.add_object(&sphereObject);
 
     glm::mat4 view = glm::mat4(1.0f);
@@ -238,7 +240,7 @@ int main()
     
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     
-    // CUBAMAP FBO
+    // SPHEREMAP FBO
     unsigned int spheremap_fbo;
     glGenFramebuffers(1, &spheremap_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
