@@ -6,7 +6,7 @@ in vec3 lightDir;
 
 out vec4 colorFrag;
 
-uniform sampler2D wireframeTexture;
+uniform sampler2D normalTexture;
 uniform sampler2D colorTexture;
 uniform sampler2D screenTexture;
 uniform sampler2D mapTexture;
@@ -47,7 +47,6 @@ void main()
     int frag_x = int(mod(gl_FragCoord.x / dither_factor, MAT_SIZE));
     int frag_y = int(mod(gl_FragCoord.y / dither_factor, MAT_SIZE));
     vec3 pattern_color = vec3(diff < indexMatrix[(frag_x + frag_y * MAT_SIZE)] / 16.0 ? dither_color : 1 - dither_color);
-    vec3 wireframe_color = texture(wireframeTexture, interp_UV).rgb;
-    color = dot(wireframe_color, wireframe_color) == 3 ? wireframe_color : pattern_color * texture(colorTexture, uv).rgb;
-    colorFrag = vec4(color, 1.0);
+    color = pattern_color * texture(colorTexture, uv).rgb;
+    colorFrag = texture(normalTexture, interp_UV);//vec4(color, 1.0);
 }

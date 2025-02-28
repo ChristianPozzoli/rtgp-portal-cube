@@ -13,8 +13,8 @@ Universita' degli Studi di Milano
 
 // vertex position in world coordinates
 layout (location = 0) in vec3 position;
-// UV texture coordinates
 layout (location = 1) in vec3 normal;
+// UV texture coordinates
 layout (location = 2) in vec2 UV;
 // the numbers used for the location in the layout qualifier are the positions of the vertex attribute
 // as defined in the Mesh class
@@ -31,6 +31,7 @@ uniform vec3 pointLightPosition;
 
 out vec3 lightDir;
 out vec3 vNormal;
+flat out vec3 flat_normal;
 out vec3 vViewPosition;
 out vec2 interp_UV;
 
@@ -45,6 +46,7 @@ void main()
 	lightDir = lightPos.xyz - mvPosition.xyz;
 	
 	vNormal = normalize(normalMatrix * normal);
+	flat_normal = vNormal;
 
     gl_Position = projectionMatrix * mvPosition;
 }

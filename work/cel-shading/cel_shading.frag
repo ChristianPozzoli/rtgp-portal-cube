@@ -29,7 +29,8 @@ uniform float outline_threshold_upper = 3.0;
 uniform int poster_factor_sobel = 1;
 uniform int poster_factor_final = 1;
 
-uniform float gloss_threshold = 0.95;
+uniform float gloss_threshold_lower = 0.95;
+uniform float gloss_threshold_upper = 1.0;
 uniform float gloss_factor = 0.5;
 
 vec3 textureKernel() {
@@ -101,7 +102,6 @@ vec3 textureKernel() {
         }
     }
     
-    vec3 col = vec3(1.0);
     vec3 col_r = vec3(0.0);
     vec3 col_d = vec3(0.0);
     for(int i = 0; i < 9; i++)
@@ -136,7 +136,7 @@ vec3 CelShading()
     float lambertian = max(dot(L, N), 0.0);
 
     vec3 lut_color = texture(LUT, vec2(lambertian, 0.0)).rgb;
-    float specular_lambertian = max((lambertian - gloss_threshold), 0.0) / (1 - gloss_threshold);
+    float specular_lambertian = smoothstep(gloss_threshold_lower, gloss_threshold_upper, lambertian);
     vec3 specular_color = specular_lambertian * vec3(gloss_factor);
     
     return lut_color * color() + specular_color;

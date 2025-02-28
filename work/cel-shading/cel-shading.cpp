@@ -115,7 +115,6 @@ Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
 glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 
-glm::vec3 diffuseColor(1.0f, 1.0f, 1.0f);
 glm::vec3 specularColor(1.0f, 1.0f, 1.0f);
 glm::vec3 ambientColor(0.1f, 0.1f, 0.1f);
 
@@ -132,7 +131,8 @@ GLint cel_shading_poster_factor_final = 10;
 GLfloat cel_shading_texture_outline_threshold_lower = 2.0f;
 GLfloat cel_shading_texture_outline_threshold_upper = 3.0f;
 GLfloat along_normals_factor = 0.0035f;
-GLfloat gloss_threshold = 0.95f;
+GLfloat gloss_threshold_lower = 0.97f;
+GLfloat gloss_threshold_upper = 0.98f;
 GLfloat gloss_factor = 0.25f;
 
 void setup_illum_shader(Shader&);
@@ -148,6 +148,7 @@ const char* lut_items[] = {
     "LUT_cel_shading_6.png",
     "LUT_cel_shading_7.png",
     "LUT_cel_shading_8.png",
+    "LUT_cel_shading_9.png",
 };
 
 /////////////////// MAIN function ///////////////////////
@@ -219,25 +220,23 @@ int main()
     // we print on console the name of the first subroutine used
     PrintCurrentShader(current_subroutine);
 
-    Texture uvTexture("../../textures/UV_Grid_Sm.png");
     Texture* lut_cel_shading_texture = new Texture(
         ("../../textures/cel_shading_scene/" + string(lut_items[lut_current_index])).c_str(),
         GL_CLAMP_TO_EDGE,
         GL_NEAREST,
         GL_NEAREST);
-
+        
     ModelObject floorObject("Floor", "../../models/plane.obj", cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(glm::vec3(0.0f, 0.5f, 0.0f));
     
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", cel_shading, glm::vec3(-5.0f, 1.0f, -5.0f), 0.5f);
-    bunnyObject.setTexture(&uvTexture);
-    bunnyObject.setColor(diffuseColor);
+    Texture uvTexture("../../textures/UV_Grid_Sm.png");
+    //bunnyObject.setTexture(&uvTexture);
     
     // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", cel_shading, glm::vec3(0.0f, 1.0f, -5.0f), 1.5f);
-    sphereObject.setColor(diffuseColor);
     
     ModelObject duckObject("Duck", "../../models/cel_shading_scene/rubber_duck_toy_lp.gltf", cel_shading, glm::vec3(-1.0f, -1.0f, 4.0), 1.0f, glm::vec3(-90.0f, 0.0, 150.0f));
     Texture duckTexture("../../textures/cel_shading_scene/rubber_duck_toy_diff_1k.jpg");
@@ -330,14 +329,15 @@ int main()
                     }
                 }
                 ImGui::SeparatorText("Texture");
-                ImGui::InputFloat("Texture Offset Factor", (float*)&cel_shading_texture_offset_factor, 1.0f, 10000.0f);
-                ImGui::SliderFloat("Texture Outline Threshold Lower", (float*)&cel_shading_texture_outline_threshold_lower, 0.0f, 50.0f);
-                ImGui::SliderFloat("Texture Outline Threshold Upper", (float*)&cel_shading_texture_outline_threshold_upper, 0.0f, 50.0f);
-                ImGui::SliderInt("Poster Factor for sobel effect", &cel_shading_poster_factor_sobel, 1.0f, 50.0f);
+                ImGui::InputFloat("Offset Factor", (float*)&cel_shading_texture_offset_factor, 1.0f, 10000.0f);
+                ImGui::SliderFloat("Outline Threshold Lower", (float*)&cel_shading_texture_outline_threshold_lower, 0.0f, 50.0f);
+                ImGui::SliderFloat("Outline Threshold Upper", (float*)&cel_shading_texture_outline_threshold_upper, 0.0f, 50.0f);
+                ImGui::SliderInt("Poster Factor for sobel", &cel_shading_poster_factor_sobel, 1.0f, 50.0f);
                 ImGui::SliderInt("Poster Factor for final color", &cel_shading_poster_factor_final, 1.0f, 50.0f);
                 ImGui::SeparatorText("Glossiness");
-                ImGui::SliderFloat("Gloss threshold", (float*)&gloss_threshold, 0.0f, 1.0f);
-                ImGui::SliderFloat("Gloss factor", (float*)&gloss_factor, 0.0f, 1.0f);
+                ImGui::SliderFloat("Threshold lower", (float*)&gloss_threshold_lower, 0.0f, 1.0f);
+                ImGui::SliderFloat("Threshold upper", (float*)&gloss_threshold_upper, 0.0f, 1.0f);
+                ImGui::SliderFloat("Factor", (float*)&gloss_factor, 0.0f, 1.0f);
                 ImGui::SeparatorText("Outline");
                 ImGui::SliderFloat("Vectors along normals", (float*)&along_normals_factor, 0.0f, 0.015f, "%.5f");
             }
@@ -636,6 +636,7 @@ void setup_cel_shading(Shader& cel_shading)
     cel_shading.SetFloat("outline_threshold_upper", cel_shading_texture_outline_threshold_upper);
     cel_shading.SetInt("poster_factor_sobel", cel_shading_poster_factor_sobel);
     cel_shading.SetInt("poster_factor_final", cel_shading_poster_factor_final);
-    cel_shading.SetFloat("gloss_threshold", gloss_threshold);
+    cel_shading.SetFloat("gloss_threshold_lower", gloss_threshold_lower);
+    cel_shading.SetFloat("gloss_threshold_upper", gloss_threshold_upper);
     cel_shading.SetFloat("gloss_factor", gloss_factor);
 }
