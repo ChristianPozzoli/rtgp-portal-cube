@@ -10,7 +10,7 @@ struct Vertex {
     glm::vec2 TexCoords;
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
-    glm::vec3 AverageNormal;
+    // glm::vec3 AverageNormal;
 };
 
 struct Mesh {
@@ -113,9 +113,9 @@ private:
         glEnableVertexAttribArray(attributeLocation);
         glVertexAttribPointer(attributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Bitangent));
         
-        attributeLocation = 5;
-        glEnableVertexAttribArray(attributeLocation);
-        glVertexAttribPointer(attributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, AverageNormal));
+        // attributeLocation = 5;
+        // glEnableVertexAttribArray(attributeLocation);
+        // glVertexAttribPointer(attributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, AverageNormal));
         
         glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
         glBindVertexArray(0); // Unbind VAO (it's always a good thing to unbind any buffer/array to prevent strange bugs), remember: do NOT unbind the EBO, keep it bound to this VAO
