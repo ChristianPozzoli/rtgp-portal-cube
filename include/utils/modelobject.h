@@ -28,6 +28,10 @@ public:
         delete m_model;
     }
 
+    Model& model() {
+        return *m_model;
+    }
+
 private:
     Model* m_model;
 

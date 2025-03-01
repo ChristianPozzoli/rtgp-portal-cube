@@ -339,7 +339,7 @@ int main()
                 ImGui::SliderFloat("Threshold upper", (float*)&gloss_threshold_upper, 0.0f, 1.0f);
                 ImGui::SliderFloat("Factor", (float*)&gloss_factor, 0.0f, 1.0f);
                 ImGui::SeparatorText("Outline");
-                ImGui::SliderFloat("Vectors along normals", (float*)&along_normals_factor, 0.0f, 0.015f, "%.5f");
+                ImGui::SliderFloat("Vectors along normals", (float*)&along_normals_factor, 0.0f, 2.0f, "%.5f");
             }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
@@ -393,8 +393,8 @@ int main()
 		
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-        main_scene.draw(view, projection, &back_face_shader);
         
+        main_scene.draw(view, projection, &back_face_shader);
         
         glCullFace(GL_BACK);
         main_scene.draw(view, projection);

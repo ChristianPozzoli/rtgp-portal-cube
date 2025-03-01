@@ -2,6 +2,7 @@
 
 using namespace std;
 
+#include <unordered_map>
 #include <glm/glm.hpp>
 
 #include <assimp/Importer.hpp>
@@ -67,6 +68,19 @@ private:
     {
         vector<Vertex> vertices;
         vector<GLuint> indices;
+        unordered_map<GLuint, std::vector<GLuint>> verticeToFace;
+        
+		for (GLuint i = 0; i < mesh->mNumFaces; i++)
+		{
+			aiFace* face = &mesh->mFaces[i];
+
+			for (GLuint j = 0; j < face->mNumIndices; j++)
+			{
+                GLuint vertexIndex = face->mIndices[j];
+				indices.emplace_back(vertexIndex);
+                verticeToFace[vertexIndex].emplace_back(i);
+			}
+		}
 
         for(GLuint i = 0; i < mesh->mNumVertices; i++)
         {
@@ -105,18 +119,33 @@ private:
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
             }
 
+            auto f = verticeToFace[i].begin();
+            auto end = verticeToFace[i].end();
+
+            vertex.AverageNormal = glm::vec3(0.0);
+            while (f != end) {
+                const aiFace& face = mesh->mFaces[*f];
+                bool found = false;
+                for (GLuint j = 0; j < face.mNumIndices && !found; j++)
+                {
+                    GLuint vertexIndex = face.mIndices[j];
+                    if(vertexIndex == i) {
+                        glm::vec3 n;
+                        n.x = mesh->mNormals[face.mIndices[j]].x;
+                        n.y = mesh->mNormals[face.mIndices[j]].y;
+                        n.z = mesh->mNormals[face.mIndices[j]].z;
+                        vertex.AverageNormal += n;
+                        found = true;
+                    }
+                }
+
+                ++f;
+            }
+
+            vertex.AverageNormal = glm::normalize(vertex.AverageNormal);
+
             vertices.emplace_back(vertex);
         }
-		
-		for (GLuint i = 0; i < mesh->mNumFaces; i++)
-		{
-			aiFace* face = &mesh->mFaces[i];
-
-			for (GLuint j = 0; j < face->mNumIndices; j++)
-			{
-				indices.emplace_back(face->mIndices[j]);
-			}
-		}
 
         return Mesh(vertices, indices);
     }
