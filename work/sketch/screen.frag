@@ -73,7 +73,7 @@ float cnoise(vec2 P)
 //
 /////////////////////////////////////////////////////////////////
 
-vec3 rgb2hsv(vec3 c)
+vec3 rgb2hsb(vec3 c)
 {
     vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
     vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -84,7 +84,7 @@ vec3 rgb2hsv(vec3 c)
     return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-vec3 hsv2rgb(vec3 c)
+vec3 hsb2rgb(vec3 c)
 {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
     vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
@@ -95,11 +95,11 @@ vec3 hatch(float noise)
 {
     vec2 noise_uv = interp_UV - noise * noise_strength_color;
     vec3 hatchColor = texture(hatchTexture, interp_UV).rgb;
-    vec3 color_sample_hsv = rgb2hsv(texture(screenTexture, noise_uv).rgb);
-    float lambertian = color_sample_hsv.z;
-    color_sample_hsv.y = color_saturation;
-    color_sample_hsv.z = color_brightness;
-    vec3 color_sample_rgb = hsv2rgb(color_sample_hsv);
+    vec3 color_sample_hsb = rgb2hsb(texture(screenTexture, noise_uv).rgb);
+    float lambertian = color_sample_hsb.z;
+    color_sample_hsb.y = color_saturation;
+    color_sample_hsb.z = color_brightness;
+    vec3 color_sample_rgb = hsb2rgb(color_sample_hsb);
     
     return lambertian >= 0.9 ? background_color :
             (color_sample_rgb -
@@ -128,9 +128,6 @@ void main()
          1, -8,  1,
          1,  1,  1
     );
-    
-    vec3 sampleTex_normal[9];
-    vec3 sampleTex_depth[9];
 
     // Noise in order to give a sketch line and imprecise coloration
     float noise = cnoise(interp_UV * noise_frequency_edge);
@@ -138,9 +135,9 @@ void main()
     vec3 col = vec3(0.0);
     for(int i = 0; i < 9; i++)
     {
-        sampleTex_normal[i] = vec3(texture(normalTexture, uv + offsets[i]));
-        sampleTex_depth[i] = vec3(texture(depthTexture, uv + offsets[i]));
-        col += sampleTex_normal[i] * kernel[i] + sampleTex_depth[i] * kernel[i];
+        vec3 sampleTex_normal = texture(normalTexture, uv + offsets[i]).rgb;
+        vec3 sampleTex_depth = texture(depthTexture, uv + offsets[i]).rgb;
+        col += sampleTex_normal * kernel[i] + sampleTex_depth * kernel[i];
     }
     
     col = edge_threshold > 0 && dot(col, col) >= edge_threshold ?
