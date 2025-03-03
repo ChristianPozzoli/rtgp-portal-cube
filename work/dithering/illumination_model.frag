@@ -59,7 +59,7 @@ vec3 FullLambert()
   vec3 N = normalize(vNormal);
   vec3 L = normalize(lightDir);
 
-  float lambertian = max(dot(L, N), 0.0);
+  float lambertian = max(dot(L, N), 0.05);
 
   return lambertian * color();
 }
@@ -76,5 +76,5 @@ vec3 LambertBW()
 
 void main(void)
 {
-  colorFrag = vec4(LambertBW(), 1.0);
+  colorFrag = vec4(FullLambert(), 1.0);
 }

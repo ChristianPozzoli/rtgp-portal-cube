@@ -171,10 +171,6 @@ int main()
     Shader spheremap_shader = Shader("spheremap.vert", "spheremap.frag");
     Shader screen_shader = Shader("screen.vert", "screen.frag");
 
-    Texture uvTexture("../../textures/UV_Grid_Sm.png");
-    // Texture paperTexture("../../textures/paper_3000.jpg");
-    // paperTexture.setWrapS(GL_REPEAT);
-    // paperTexture.setWrapT(GL_REPEAT);
     Texture hatch_texture("../../textures/hatch_rgb.png");
     hatch_texture.setWrapS(GL_REPEAT);
     hatch_texture.setWrapT(GL_REPEAT);
@@ -183,11 +179,13 @@ int main()
     // TexturesphereMap hatch_texture_spheremap("../../textures/cube/NissiBeach/", ".jpg");
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-    bunnyObject.setTexture(&uvTexture);
+    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(- 6.0f, - 0.7f, 9.0f), 0.1f);
+    bunnyObject.setRotation(glm::vec3(0.0f, 90.0f, 0.0f));
+    bunnyObject.setColor(glm::vec3(1.0f, 0.441f, 0.0f));
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
+    ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(- 3.5f, - 0.55f, 16.0f), 0.35f);
+    sphereObject.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
@@ -198,6 +196,40 @@ int main()
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+    
+    ModelObject treeObject("Stylized tree", "../../models/sketch_scene/stylized_tree_trunk.gltf", illum_shader);
+    treeObject.setPosition(glm::vec3(3.0f, - 1.0f, -2.0f));
+    treeObject.setScale(0.25f);
+    treeObject.setColor(glm::vec3(0.343f, 0.212f, 0.0f));
+    ModelObject leavesObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.gltf", illum_shader);
+    leavesObject.setColor(glm::vec3(1.0f, 0.681f, 0.991f));
+    treeObject.addChild(&leavesObject);
+    
+    ModelObject oldTreeObject("Old tree", "../../models/sketch_scene/old_tree.fbx", illum_shader);
+    Texture oldTreeTexture("../../textures/sketch_scene/old_tree.png");
+    oldTreeObject.setTexture(&oldTreeTexture);
+    oldTreeObject.setPosition(glm::vec3(-2.0f, - 0.6f, 16.0f));
+    oldTreeObject.setRotation(glm::vec3(180.0f, 220.0f, 0.0f));
+    oldTreeObject.setScale(0.75f);
+    oldTreeObject.setColor(glm::vec3(1.0f, 0.559f, 0.0f));
+    
+    ModelObject benchObject("Bench", "../../models/sketch_scene/bench.fbx", illum_shader);
+    Texture benchTexture("../../textures/sketch_scene/bench.png");
+    benchObject.setTexture(&benchTexture);
+    benchObject.setPosition(glm::vec3(2.0f, - 1.0f, -2.0f));
+    benchObject.setRotation(glm::vec3(0.0f, 120.0f, 0.0f));
+    
+    ModelObject swingObject("Swing", "../../models/sketch_scene/swing.fbx", illum_shader);
+    swingObject.setColor(glm::vec3(0.0f, 0.412f, 1.0f));
+    swingObject.setPosition(glm::vec3(0.2f, -0.5f, 15.5f));
+    swingObject.setRotation(glm::vec3(0.0f, 5.0f, 0.0f));
+    swingObject.setScale(0.6f);
+    
+    ModelObject sliderObject("Slider", "../../models/sketch_scene/slider.fbx", illum_shader);
+    sliderObject.setColor(glm::vec3(1.0f, 1.0f, 0.0f));
+    sliderObject.setPosition(glm::vec3(18.0f, 1.8f, 10.0f));
+    sliderObject.setRotation(glm::vec3(0.0f, - 120.0f, 0.0f));
+    sliderObject.setScale(0.8f);
 
     ScreenQuadObject screen_quad;
 
@@ -206,6 +238,13 @@ int main()
     mainScene.add_object(&bunnyObject);
     mainScene.add_object(&cubeObject);
     mainScene.add_object(&sphereObject);
+
+    mainScene.add_object(&treeObject);
+    mainScene.add_object(&leavesObject);
+    mainScene.add_object(&oldTreeObject);
+    mainScene.add_object(&benchObject);
+    mainScene.add_object(&swingObject);
+    mainScene.add_object(&sliderObject);
 
     glm::mat4 view = glm::mat4(1.0f);
 
@@ -382,17 +421,11 @@ int main()
         {
             orientationY+=(deltaTime*spin_speed);
 
-            glm::vec3 rotation = bunnyObject.rotation();
-            rotation.y = orientationY;
-            bunnyObject.setRotation(rotation);
-
-            rotation = cubeObject.rotation();
-            rotation.y = orientationY;
-            cubeObject.setRotation(rotation);
-
-            rotation = sphereObject.rotation();
-            rotation.y = orientationY;
-            sphereObject.setRotation(rotation);
+            for(auto i = mainScene.cbegin(); i != mainScene.cend(); ++i) {
+                glm::vec3 rotation = (*i)->rotation();
+                rotation.y = orientationY;
+                (*i)->setRotation(rotation);
+            }
         }
 
         setup_illum_shader(illum_shader);
