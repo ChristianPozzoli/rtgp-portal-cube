@@ -197,7 +197,7 @@ int main()
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(glm::vec3(0.0f, 0.5f, 0.0f));
     
-    ModelObject treeObject("Stylized tree", "../../models/sketch_scene/stylized_tree_trunk.gltf", illum_shader);
+    ModelObject treeObject("Stylized tree", "../../models/sketch_scene/stylized_tree_trunk.fbx", illum_shader);
     treeObject.setPosition(glm::vec3(3.0f, - 1.0f, -2.0f));
     treeObject.setScale(0.25f);
     treeObject.setColor(glm::vec3(0.343f, 0.212f, 0.0f));
