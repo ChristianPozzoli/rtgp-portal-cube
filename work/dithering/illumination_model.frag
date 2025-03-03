@@ -69,7 +69,7 @@ vec3 LambertBW()
   vec3 N = normalize(vNormal);
   vec3 L = normalize(lightDir);
 
-  float lambertian = max(dot(L, N), 0.0);
+  float lambertian = max(dot(L, N), 0.05);
 
   return vec3(lambertian);
 }

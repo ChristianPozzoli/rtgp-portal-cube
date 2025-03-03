@@ -172,9 +172,9 @@ int main()
     Shader screen_shader = Shader("screen.vert", "screen.frag");
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
-    Texture paperTexture("../../textures/paper_3000.jpg");
-    paperTexture.setWrapS(GL_REPEAT);
-    paperTexture.setWrapT(GL_REPEAT);
+    // Texture paperTexture("../../textures/paper_3000.jpg");
+    // paperTexture.setWrapS(GL_REPEAT);
+    // paperTexture.setWrapT(GL_REPEAT);
     Texture hatch_texture("../../textures/hatch_rgb.png");
     hatch_texture.setWrapS(GL_REPEAT);
     hatch_texture.setWrapT(GL_REPEAT);
@@ -422,10 +422,10 @@ int main()
         
         glDepthFunc(GL_LEQUAL);
         glm::mat4 spheremapViewMatrix = glm::mat4(
-            camera.WorldFront.x, 0.0, - camera.WorldFront.z, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            camera.WorldFront.z, 0.0, camera.WorldFront.x, 0.0,
-            0.0, 0.0, 0.0, 1.0
+            camera.WorldFront.x, 0.0, -camera.WorldFront.z, 0.0,
+            0.0,                 1.0, 0.0,                  0.0,
+            camera.WorldFront.z, 0.0, camera.WorldFront.x,  0.0,
+            0.0,                 0.0, 0.0,                  1.0
         );
         spheremap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
         spheremap_shader.SetFloat("hatching_repeat", hatchingRepeat);
@@ -472,8 +472,8 @@ int main()
         // glBindTexture(GL_TEXTURE_2D, hatch_texture.name());
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, paperTexture.name());
+        // glActiveTexture(GL_TEXTURE4);
+        // glBindTexture(GL_TEXTURE_2D, paperTexture.name());
 
         screen_quad.draw();
         
@@ -494,24 +494,18 @@ int main()
     glDeleteFramebuffers(1, &spheremap_fbo);
     glDeleteFramebuffers(1, &screen_fbo);
 
-    // when I exit from the graphics loop, it is because the application is closing
-    // we delete the Shader Programs
+    illum_shader.Delete();
     color_shader.Delete();
     depth_shader.Delete();
-    illum_shader.Delete();
+    normal_shader.Delete();
+    spheremap_shader.Delete();
     screen_shader.Delete();
 
-    // we close and delete the created context
     glfwTerminate();
 
     return 0;
 }
 
-
-//////////////////////////////////////////
-// The function parses the content of the Shader Program, searches for the Subroutine type names,
-// the subroutines implemented for each type, print the names of the subroutines on the terminal, and add the names of
-// the subroutines to the shaders vector, which is used for the shaders swapping
 void SetupShader(int program)
 {
     int maxSub,maxSubU,countActiveSU;
