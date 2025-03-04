@@ -59,6 +59,8 @@ positive Z axis points "outside" the screen
 #include <utils/modelobject.h>
 #include <utils/planeobject.h>
 #include <utils/scene.h>
+#include <utils/shaderscene.h>
+#include "sketchshaderscene.h"
 
 // we load the GLM classes used in the application
 #include <glm/glm.hpp>
@@ -156,9 +158,9 @@ GLfloat sphereScale = 1.5f;
 glm::vec3 cubePosition(0.0f, 1.0f, -5.0f);
 GLfloat cubeScale = 1.5f;
 
-Scene* currentScene = nullptr;
+ShaderScene* currentScene = nullptr;
 
-unordered_map<PlaneObject*, Scene*> planeCubeMap;
+unordered_map<PlaneObject*, ShaderScene*> planeCubeMap;
 
 void setup_illum_shader(Shader&);
 void setup_cel_shading(Shader&);
@@ -212,9 +214,6 @@ int main()
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
-
-    //the "clear" color for the frame buffer
-    glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
 	
 	IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -242,58 +241,58 @@ int main()
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject bunnyObject("../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale);
+    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale);
     bunnyObject.setTexture(&uvTexture);
     bunnyObject.setColor(diffuseColor);
 
     // we load the model(s) (code of Model class is in include/utils/model.h)
-    ModelObject sphereObject("../../models/sphere.obj", illum_shader, spherePosition, sphereScale);
+    ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, spherePosition, sphereScale);
     sphereObject.setColor(diffuseColor);
 
-    ModelObject cubeObject("../../models/cube.obj", illum_shader, cubePosition, cubeScale);
-    cubeObject.setColor(diffuseColor);
+    // ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, cubePosition, cubeScale);
+    // cubeObject.setColor(diffuseColor);
 
-    ModelObject floorObject("../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
+    ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(groundColor);
 
-    Scene mainScene;
-    mainScene.add_object(&floorObject);
-    mainScene.add_object(&sphereObject);
+    ShaderScene mainScene("MainScene");
+    mainScene.add_external_object(&floorObject);
+    mainScene.add_external_object(&sphereObject);
 
     currentScene = &mainScene;
     
-    Scene frontScene;
-    frontScene.add_object(&cubeObject);
+    SketchShaderScene frontScene("FrontSketchScene");
+    frontScene.setup_scene(window, width, height);
     
-    Scene rightScene;
-    rightScene.add_object(&bunnyObject);
+    ShaderScene rightScene("RightScene");
+    rightScene.add_external_object(&bunnyObject);
     
-    ModelObject cubeObject2("../../models/cube.obj", illum_shader, cubePosition, cubeScale / 2);
+    ModelObject cubeObject2("Cube_2", "../../models/cube.obj", illum_shader, cubePosition, cubeScale / 2);
     cubeObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
         
-    ModelObject bunnyObject2("../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale / 2);
+    ModelObject bunnyObject2("Bunny_2", "../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale / 2);
     bunnyObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
     
-    ModelObject cubeStructure("../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
+    ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
     cubeStructure.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
     
-    Scene leftScene;
-    leftScene.add_object(&cubeObject2);
+    ShaderScene leftScene("LeftScene");
+    leftScene.add_external_object(&cubeObject2);
     
-    Scene backScene;
-    backScene.add_object(&bunnyObject2);
+    ShaderScene backScene("BackScene");
+    backScene.add_external_object(&bunnyObject2);
 
-    PlaneObject frontPlaneObject(color_shader, glm::vec3(0.0f, 0.0f, planeOffset()), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+    PlaneObject frontPlaneObject("Plane front", color_shader, glm::vec3(0.0f, 0.0f, planeOffset()), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
     frontPlaneObject.setColor(leftFrontBorderColor);
     
-    PlaneObject rightPlaneObject(color_shader, glm::vec3(planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, 90.0f, 0.0f));
+    PlaneObject rightPlaneObject("Plane right", color_shader, glm::vec3(planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, 90.0f, 0.0f));
     rightPlaneObject.setColor(rightFrontBorderColor);
     
-    PlaneObject leftPlaneObject(color_shader, glm::vec3(- planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, - 90.0f, 0.0f));
+    PlaneObject leftPlaneObject("Plane left", color_shader, glm::vec3(- planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, - 90.0f, 0.0f));
     leftPlaneObject.setColor(leftBackBorderColor);
     
-    PlaneObject backPlaneObject(color_shader, glm::vec3(0.0f, 0.0f,- planeOffset()), 1.0f, glm::vec3(0.0f, 180.0f, 0.0f));
+    PlaneObject backPlaneObject("Plane back", color_shader, glm::vec3(0.0f, 0.0f,- planeOffset()), 1.0f, glm::vec3(0.0f, 180.0f, 0.0f));
     backPlaneObject.setColor(rightBackBorderColor);
 
     cubeStructure.addChild(&frontPlaneObject);
@@ -345,7 +344,7 @@ int main()
             if (ImGui::ColorEdit3("Ground color", (float*)&groundColor)) { floorObject.setColor(groundColor); }
             if(ImGui::ColorEdit3("Objects color", (float*)&diffuseColor)) {
                 sphereObject.setColor(diffuseColor);
-                cubeObject.setColor(diffuseColor);
+                // cubeObject.setColor(diffuseColor);
                 bunnyObject.setColor(diffuseColor);
             }
 			
@@ -385,10 +384,8 @@ int main()
 			ImGui::SeparatorText("Sphere");
 			if (ImGui::InputFloat3("Sphere position", (float*)&spherePosition)) { sphereObject.setPosition(spherePosition); }
             if (ImGui::InputFloat("Sphere scale", &sphereScale)) { sphereObject.setScale(sphereScale); }
-            
-			ImGui::SeparatorText("Cube");
-			if (ImGui::InputFloat3("Cube position", (float*)&cubePosition)) { cubeObject.setPosition(cubePosition); }
-            if (ImGui::InputFloat("Cube scale", &cubeScale)) { cubeObject.setScale(cubeScale); }
+
+            frontScene.drawImGui();
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
@@ -425,6 +422,7 @@ int main()
         ///////////////////
         
         glEnable(GL_DEPTH_TEST);
+        glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
@@ -487,7 +485,7 @@ int main()
         for (uint8_t i = 0; i < visiblePlanesSize; ++i)
         {
             PlaneObject* plane = visiblePlanes[i];
-            Scene* scene = planeCubeMap.at(plane);            
+            ShaderScene* scene = planeCubeMap.at(plane);            
             
             glm::mat4 portalProjection = projection;
             
@@ -499,7 +497,7 @@ int main()
                 portalNormal
             );
             
-            scene->draw(view, portalProjection);
+            scene->update_scene(&camera, view, portalProjection);
 
             if(planeBorder > 0) {
                 glStencilFunc(GL_NOTEQUAL, i + 1, 0xFF);
@@ -522,7 +520,7 @@ int main()
         
         /////////////////// OBJECTS OUTSIDE THE PORTAL ////////////////////////
         
-        currentScene->draw(view, projection);
+        currentScene->update_scene(&camera, view, projection);
         cubeStructure.draw(view, projection);
 
         // Rendering imgui
@@ -540,6 +538,7 @@ int main()
     // we delete the Shader Programs
     color_shader.Delete();
     illum_shader.Delete();
+    frontScene.delete_scene();
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -679,7 +678,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
         if(observedPlane)
         {
-            Scene* scene = planeCubeMap[observedPlane];
+            ShaderScene* scene = planeCubeMap[observedPlane];
             planeCubeMap[observedPlane] = currentScene;
             currentScene = scene;
         }

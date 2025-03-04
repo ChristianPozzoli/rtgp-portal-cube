@@ -51,7 +51,7 @@ public:
          return objects->cend();
     }
 
-    void drawImGui() {}
+    virtual void drawImGui() {}
 
 private:
     vector<DrawableSceneObject*>* objects;
