@@ -1,10 +1,5 @@
 #include <string>
 
-// Loader estensions OpenGL
-// http://glad.dav1d.de/
-// THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
-// GLAD will include windows.h for APIENTRY if it was not previously defined.
-// Make sure you have the correct definition for APIENTRY for platforms which define _WIN32 but don't use __stdcall
 #ifdef _WIN32
     #define APIENTRY __stdcall
 #endif
@@ -15,16 +10,12 @@
 
 #include <glad/glad.h>
 
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
-// another check related to OpenGL loader
-// confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/texturecubemap.h>
@@ -36,7 +27,6 @@
 #include <utils/screenquadobject.h>
 #include <utils/shaderscene.h>
 
-// we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
@@ -47,10 +37,12 @@
 
 #include <unordered_map>
 
+#define PI 3.14159265359
+
 class SketchShaderScene : public ShaderScene
 {
 public:
-    SketchShaderScene (std::string m_name) : ShaderScene(m_name)
+    SketchShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
     {}
 
     ~SketchShaderScene()
@@ -66,9 +58,8 @@ public:
         delete screen_shader;
     }
 
-    void setup_scene(GLFWwindow* window, int width, int height)
+    void setup_scene() override
     {
-        // we create the Shader Program used for objects (which presents different subroutines we can switch)
         illum_shader = new Shader("sketch_shaders/illumination_model.vert", "sketch_shaders/illumination_model.frag");
         color_shader = new Shader("sketch_shaders/basic.vert", "sketch_shaders/fullcolor.frag");
         depth_shader = new Shader("sketch_shaders/basic.vert", "sketch_shaders/depth.frag");
@@ -80,15 +71,10 @@ public:
         hatch_texture->setWrapS(GL_REPEAT);
         hatch_texture->setWrapT(GL_REPEAT);
         
-        //TexturesphereMap hatch_texture_spheremap("../../textures/hatch_spheremap_hard/", ".jpg");
-        // TexturesphereMap hatch_texture_spheremap("../../textures/cube/NissiBeach/", ".jpg");
-
-        // we load the model(s) (code of Model class is in include/utils/model.h)
         ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(- 6.0f, - 0.7f, 9.0f), 0.1f);
         bunnyObject->setRotation(glm::vec3(0.0f, 90.0f, 0.0f));
         bunnyObject->setColor(glm::vec3(1.0f, 0.441f, 0.0f));
 
-        // we load the model(s) (code of Model class is in include/utils/model.h)
         ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(- 3.5f, - 0.55f, 16.0f), 0.35f);
         sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -106,7 +92,7 @@ public:
         treeObject->setPosition(glm::vec3(3.0f, - 1.0f, -2.0f));
         treeObject->setScale(0.25f);
         treeObject->setColor(glm::vec3(0.343f, 0.212f, 0.0f));
-        ModelObject* leavesObject = new ModelObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.gltf", *illum_shader);
+        ModelObject* leavesObject = new ModelObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.fbx", *illum_shader);
         leavesObject->setColor(glm::vec3(1.0f, 0.681f, 0.991f));
         treeObject->addChild(leavesObject);
         
@@ -169,6 +155,8 @@ public:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normal_fbo_texture, 0);
 
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -184,6 +172,8 @@ public:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depth_fbo_texture, 0);
         
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -199,6 +189,8 @@ public:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, spheremap_fbo_texture, 0);
         
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -214,6 +206,8 @@ public:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_fbo_texture, 0);
 
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -226,28 +220,25 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
+    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
     {
-
         setup_illum_shader(illum_shader);
         normal_shader->Use();
         normal_shader->SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
         
         glEnable(GL_DEPTH_TEST);
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
+        
         // RENDER ON NORMAL FBO
         glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        draw(view, projection, normal_shader);
-
+        
+        draw_objects(view, projection, normal_shader);
+        
         // RENDER ON DEPTH FBO
         glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        draw(view, projection, depth_shader);
+        draw_objects(view, projection, depth_shader);
         
         // RENDER ON spherEMAP FBO
         glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
@@ -255,31 +246,42 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glDepthFunc(GL_LEQUAL);
+        
         glm::mat4 spheremapViewMatrix = glm::mat4(
             camera->WorldFront.x, 0.0, -camera->WorldFront.z, 0.0,
-            0.0,                 1.0, 0.0,                  0.0,
+            0.0,                  1.0, 0.0,                   0.0,
             camera->WorldFront.z, 0.0, camera->WorldFront.x,  0.0,
-            0.0,                 0.0, 0.0,                  1.0
+            0.0,                  0.0, 0.0,                   1.0
         );
-        spheremap_shader->SetFloat("viewAngleY", glm::asin(camera->Front.y));
+        spheremap_shader->SetFloat("viewAngleY", glm::asin(camera->Front.y) / PI);
         spheremap_shader->SetFloat("hatching_repeat", hatchingRepeat);
         spheremapObject->draw(spheremapViewMatrix, projection);
+        
         glDepthFunc(GL_LESS);
         
         // RENDER ON SCREEN FBO
         glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        draw(view, projection);
         
+        draw_objects(view, projection);
         
         // RENDER ON DEFAULT FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDisable(GL_DEPTH_TEST);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+        glBlitFramebuffer(
+            0, 0, width, height,
+            0, 0, width, height,
+            GL_DEPTH_BUFFER_BIT,
+            GL_NEAREST
+        );
+    }
+    
+    void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
+    {
+        screen_shader->Use();
+        
         screen_shader->SetInt("normalTexture", 0);
         screen_shader->SetInt("depthTexture", 1);
         screen_shader->SetInt("screenTexture", 2);
@@ -295,7 +297,6 @@ public:
         screen_shader->SetFloat("noise_strength_edge", noiseStrengthEdge);
         screen_shader->SetFloat("noise_strength_color", noiseStrengthColor);
         
-        screen_shader->Use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
         glActiveTexture(GL_TEXTURE1);
@@ -304,8 +305,12 @@ public:
         glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
-
+        
+        glDisable(GL_DEPTH_TEST);
+        
         screen_quad->draw();
+        
+        glEnable(GL_DEPTH_TEST);
     }
 
     void delete_scene()
@@ -347,14 +352,9 @@ public:
     }
 
 private:
-    // rotation angle on Y axis
-    GLfloat orientationY = 0.0f;
-    // rotation speed on Y axis
-    GLfloat spin_speed = 15.0f;
-    // boolean to start/stop animated rotation on Y angle
-    GLboolean spinning = GL_FALSE;
-
-    // boolean to activate/deactivate wireframe rendering
+    GLFWwindow* window;
+    GLint width;
+    GLint height;
     GLboolean wireframe = GL_FALSE;
 
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);

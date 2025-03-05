@@ -201,7 +201,7 @@ int main()
     treeObject.setPosition(glm::vec3(3.0f, - 1.0f, -2.0f));
     treeObject.setScale(0.25f);
     treeObject.setColor(glm::vec3(0.343f, 0.212f, 0.0f));
-    ModelObject leavesObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.gltf", illum_shader);
+    ModelObject leavesObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.fbx", illum_shader);
     leavesObject.setColor(glm::vec3(1.0f, 0.681f, 0.991f));
     treeObject.addChild(&leavesObject);
     

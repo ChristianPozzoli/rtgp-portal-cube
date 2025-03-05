@@ -1,36 +1,5 @@
-/*
-work10
-
-Real-Time Graphics Programming - a.a. 2023/2024
-Master degree in Computer Science
-Universita' degli Studi di Milano
-*/
-
-/*
-OpenGL coordinate system (right-handed)
-positive X axis points right
-positive Y axis points up
-positive Z axis points "outside" the screen
-
-
-                              Y
-                              |
-                              |
-                              |________X
-                             /
-                            /
-                           /
-                          Z
-*/
-
-// Std. Includes
 #include <string>
 
-// Loader estensions OpenGL
-// http://glad.dav1d.de/
-// THIS IS OPTIONAL AND NOT REQUIRED, ONLY USE THIS IF YOU DON'T WANT GLAD TO INCLUDE windows.h
-// GLAD will include windows.h for APIENTRY if it was not previously defined.
-// Make sure you have the correct definition for APIENTRY for platforms which define _WIN32 but don't use __stdcall
 #ifdef _WIN32
     #define APIENTRY __stdcall
 #endif
@@ -41,16 +10,12 @@ positive Z axis points "outside" the screen
 
 #include <glad/glad.h>
 
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
-// another check related to OpenGL loader
-// confirm that GLAD didn't include windows.h
 #ifdef _WINDOWS_
     #error windows.h was included!
 #endif
 
-// classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/texture.h>
 #include <utils/model.h>
@@ -62,7 +27,6 @@ positive Z axis points "outside" the screen
 #include <utils/shaderscene.h>
 #include "sketchshaderscene.h"
 
-// we load the GLM classes used in the application
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
@@ -73,44 +37,31 @@ positive Z axis points "outside" the screen
 
 #include <unordered_map>
 
-// dimensions of application's window
 GLuint screenWidth = 1920, screenHeight = 1080;
 GLfloat fieldOfViewY = 45.0f;
 
-// callback function for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void apply_camera_movements();
 bool canMoveCamera = false;
 
-// index of the current shader subroutine (= 0 in the beginning)
 GLuint current_subroutine = 0;
-// a vector for all the shader subroutines names used and swapped in the application
 vector<std::string> subroutines;
-
-// the name of the subroutines are searched in the shaders, and placed in the shaders vector (to allow shaders swapping)
 void SetupShader(int shader_program);
-
-// print on console the name of current shader subroutine
 void PrintCurrentShader(int subroutine);
 
 bool keys[1024];
 GLfloat lastX, lastY;
 bool firstMouse = true;
 
-// parameters for time computation
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
-// rotation angle on Y axis
 GLfloat orientationY = 0.0f;
-// rotation speed on Y axis
 GLfloat spin_speed = 15.0f;
-// boolean to start/stop animated rotation on Y angle
 GLboolean spinning = GL_FALSE;
 
-// boolean to activate/deactivate wireframe rendering
 GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
@@ -135,7 +86,6 @@ GLfloat F0 = 0.9f;
 
 GLfloat celShadingThickness = .3f;
 
-// color to be passed as uniform to the shader of the plane
 glm::vec3 groundColor(0.0f, 0.5f, 0.0f);
 
 GLfloat planeScale = 0.95f;
@@ -175,21 +125,14 @@ GLfloat planeOffset()
 /////////////////// MAIN function ///////////////////////
 int main()
 {
-    // Initialization of OpenGL context using GLFW
     glfwInit();
-    // We set OpenGL specifications required for this application
-    // In this case: 4.1 Core
-    // If not supported by your graphics HW, the context will not be created and the application will close
-    // N.B.) creating GLAD code to load extensions, try to take into account the specifications and any extensions you want to use,
-    // in relation also to the values indicated in these GLFW commands
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    // we set if the window is resizable
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-    // we create the application's window
     GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "RGP_work", nullptr, nullptr);
     if (!window)
     {
@@ -203,14 +146,12 @@ int main()
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    // GLAD tries to load the context set by GLFW
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cout << "Failed to initialize OpenGL context" << std::endl;
         return -1;
     }
 
-    // we define the viewport dimensions
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
@@ -220,37 +161,27 @@ int main()
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
-    // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
     
-    // we create the Shader Program used for objects (which presents different subroutines we can switch)
     Shader illum_shader = Shader("illumination_model.vert", "illumination_model.frag");
     Shader cel_shading = Shader("illumination_model.vert", "cel_shading.frag");
     Shader color_shader = Shader("basic.vert", "fullcolor.frag");
     Shader depth_shader = Shader("basic.vert", "depth.frag");
-    // we parse the Shader Program to search for the number and names of the subroutines.
-    // the names are placed in the shaders vector
+
     SetupShader(illum_shader.Program);
-    // we print on console the name of the first subroutine used
     PrintCurrentShader(current_subroutine);
 
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
 
-    // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale);
     bunnyObject.setTexture(&uvTexture);
     bunnyObject.setColor(diffuseColor);
 
-    // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, spherePosition, sphereScale);
     sphereObject.setColor(diffuseColor);
-
-    // ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, cubePosition, cubeScale);
-    // cubeObject.setColor(diffuseColor);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -262,8 +193,8 @@ int main()
 
     currentScene = &mainScene;
     
-    SketchShaderScene frontScene("FrontSketchScene");
-    frontScene.setup_scene(window, width, height);
+    SketchShaderScene frontScene("FrontSketchScene", window, width, height);
+    frontScene.setup_scene();
     
     ShaderScene rightScene("RightScene");
     rightScene.add_external_object(&bunnyObject);
@@ -421,12 +352,6 @@ int main()
 
         ///////////////////
         
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-        
         if (spinning)
         {
             orientationY+=(deltaTime*spin_speed);
@@ -435,18 +360,35 @@ int main()
             portalCubeRotation.y = orientationY;
             cubeStructure.setRotation(portalCubeRotation);
         }
-		
+        
+        /////////////////// SETUP /////////////////////////////////////////////
+        
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+        
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_STENCIL_TEST);
+        
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Disable color drawing
+        
+        glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        /////////////////// OBJECTS OUTSIDE THE PORTAL ////////////////////////
+        
+        currentScene->update_scene(&camera, view, projection);
+        currentScene->draw(view, projection);
+        
+        cubeStructure.draw(view, projection);
+        
 		/////////////////// STENCIL ///////////////////////////////////////////
         
-        vector<PlaneObject*> visiblePlanes;
-        
-        glEnable(GL_STENCIL_TEST);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color drawing
         
+        glEnable(GL_STENCIL_TEST);
         glStencilMask(0xFF); // Enable stencil drawing
-        glDepthMask(0x00);
-        
         glClear(GL_STENCIL_BUFFER_BIT);
+
+        vector<PlaneObject*> visiblePlanes;
         
         for (auto i = planeCubeMap.begin(); i != planeCubeMap.end(); ++i)
         {
@@ -497,8 +439,10 @@ int main()
                 portalNormal
             );
             
+            glClear(GL_DEPTH_BUFFER_BIT);
             scene->update_scene(&camera, view, portalProjection);
-
+            scene->draw(view, projection);
+            
             if(planeBorder > 0) {
                 glStencilFunc(GL_NOTEQUAL, i + 1, 0xFF);
                 plane->setScale(glm::vec3(planeScale + planeBorder));
@@ -506,23 +450,8 @@ int main()
             }
         }
 
-        glDisable(GL_STENCIL_TEST); // Disable stencil test
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE); // Disable color drawing
+        ///////////////////////////////////////////////////////////////////////
         
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        for (auto i = visiblePlanes.begin(); i != visiblePlanes.end(); i++)
-        {
-            (*i)->draw(view, projection);
-        }
-
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Enable color drawing
-        
-        /////////////////// OBJECTS OUTSIDE THE PORTAL ////////////////////////
-        
-        currentScene->update_scene(&camera, view, projection);
-        cubeStructure.draw(view, projection);
-
         // Rendering imgui
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

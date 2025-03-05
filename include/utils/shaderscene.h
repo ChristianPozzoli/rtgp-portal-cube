@@ -42,25 +42,26 @@ public:
         delete internal_objects;
     }
 
-    virtual void setup_scene(GLFWwindow* window, int width, int height) {}
+    virtual void setup_scene() {}
 
     virtual void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
-    {
-        draw(view, projection);
-    }
+    {}
 
     virtual void delete_scene() {}
 
-    void add_external_object(DrawableSceneObject* obj) {
+    void add_external_object(DrawableSceneObject* obj)
+    {
         external_objects->push_back(obj);
     }
 
-    void remove_external_object(DrawableSceneObject* obj) {
+    void remove_external_object(DrawableSceneObject* obj)
+    {
         external_objects->erase(std::remove(external_objects->begin(), external_objects->end(), obj), external_objects->end());
     }
 
     
-    virtual void drawImGui() {
+    virtual void drawImGui()
+    {
         if (ImGui::CollapsingHeader((m_name + " objects").c_str()))
         {
             for (vector<DrawableSceneObject*>::iterator iter = external_objects->begin(); iter < external_objects->end(); ++iter)
@@ -76,19 +77,17 @@ public:
         }
     }
 
+    virtual void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
+    {
+        draw_objects(view, projection, override_shader);
+    }
+
 protected:
     std::string m_name;
     vector<DrawableSceneObject*>* external_objects;
     vector<DrawableSceneObject*>* internal_objects;
 
-    void add_internal_object(DrawableSceneObject* obj) {
-        internal_objects->push_back(obj);
-    }
-
-    void remove_internal_object(DrawableSceneObject* obj) {
-        internal_objects->erase(std::remove(internal_objects->begin(), internal_objects->end(), obj), internal_objects->end());
-    }
-    void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
+    void draw_objects(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
     {
         for (vector<DrawableSceneObject*>::iterator iter = external_objects->begin(); iter < external_objects->end(); ++iter)
         {
@@ -100,5 +99,15 @@ protected:
             DrawableSceneObject* object = *iter;
             object->draw(view, projection, override_shader);
         }
+    }
+
+    void add_internal_object(DrawableSceneObject* obj)
+    {
+        internal_objects->push_back(obj);
+    }
+
+    void remove_internal_object(DrawableSceneObject* obj)
+    {
+        internal_objects->erase(std::remove(internal_objects->begin(), internal_objects->end(), obj), internal_objects->end());
     }
 };
