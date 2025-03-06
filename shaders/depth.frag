@@ -1,7 +1,8 @@
 #version 410 core
 
-// output shader variable
 out vec4 colorFrag;
+
+uniform vec4 colorIn;
 
 float near = 0.1f;
 float far = 50.0f;

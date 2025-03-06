@@ -26,8 +26,8 @@ public:
         -1.0f,  1.0f,    0.0f, 1.0f  // Top Left
         };
         GLuint indices[] = {  // Note that we start from 0!
-            0, 1, 3,  // First Triangle
-            1, 2, 3   // Second Triangle
+            0, 3, 1,  // First Triangle
+            1, 3, 2   // Second Triangle
         };
 
         // VBO Vertex Buffer Obj

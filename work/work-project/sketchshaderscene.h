@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 
 #ifdef _WIN32
@@ -18,7 +20,6 @@
 
 #include <utils/shader.h>
 #include <utils/texture.h>
-#include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
@@ -28,16 +29,11 @@
 #include <utils/shaderscene.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
-
-#include <unordered_map>
-
 #define PI 3.14159265359
+
+using namespace std;
 
 class SketchShaderScene : public ShaderScene
 {
@@ -60,12 +56,30 @@ public:
 
     void setup_scene() override
     {
-        illum_shader = new Shader("sketch_shaders/illumination_model.vert", "sketch_shaders/illumination_model.frag");
-        color_shader = new Shader("sketch_shaders/basic.vert", "sketch_shaders/fullcolor.frag");
-        depth_shader = new Shader("sketch_shaders/basic.vert", "sketch_shaders/depth.frag");
-        normal_shader = new Shader("sketch_shaders/illumination_model.vert", "sketch_shaders/normal.frag");
-        spheremap_shader = new Shader("sketch_shaders/spheremap.vert", "sketch_shaders/spheremap.frag");
-        screen_shader = new Shader("sketch_shaders/screen.vert", "sketch_shaders/screen.frag");
+        illum_shader = new Shader(
+            (SHADER_PATH + "illumination_model.vert").c_str(),
+            (SHADER_PATH + "sketch_shaders/lambert.frag").c_str()
+        );
+        color_shader = new Shader(
+            (SHADER_PATH + "basic.vert").c_str(),
+            (SHADER_PATH + "fullcolor.frag").c_str()
+        );
+        depth_shader = new Shader(
+            (SHADER_PATH + "basic.vert").c_str(),
+            (SHADER_PATH + "depth.frag").c_str()
+        );
+        normal_shader = new Shader(
+            (SHADER_PATH + "illumination_model.vert").c_str(),
+            (SHADER_PATH + "sketch_shaders/normal.frag").c_str()
+        );
+        spheremap_shader = new Shader(
+            (SHADER_PATH + "sketch_shaders/spheremap.vert").c_str(),
+            (SHADER_PATH + "sketch_shaders/spheremap.frag").c_str()
+        );
+        screen_shader = new Shader(
+            (SHADER_PATH + "screen.vert").c_str(),
+            (SHADER_PATH + "sketch_shaders/screen.frag").c_str()
+        );
 
         Texture* hatch_texture = new Texture("../../textures/hatch_rgb.png");
         hatch_texture->setWrapS(GL_REPEAT);
@@ -97,16 +111,16 @@ public:
         treeObject->addChild(leavesObject);
         
         ModelObject* oldTreeObject = new ModelObject("Old tree", "../../models/sketch_scene/old_tree.fbx", *illum_shader);
-        Texture oldTreeTexture("../../textures/sketch_scene/old_tree.png");
-        oldTreeObject->setTexture(&oldTreeTexture);
+        Texture* oldTreeTexture = new Texture("../../textures/sketch_scene/old_tree.png");
+        oldTreeObject->setTexture(oldTreeTexture);
         oldTreeObject->setPosition(glm::vec3(-2.0f, - 0.6f, 16.0f));
         oldTreeObject->setRotation(glm::vec3(180.0f, 220.0f, 0.0f));
         oldTreeObject->setScale(0.75f);
         oldTreeObject->setColor(glm::vec3(1.0f, 0.559f, 0.0f));
         
         ModelObject* benchObject = new ModelObject("Bench", "../../models/sketch_scene/bench.fbx", *illum_shader);
-        Texture benchTexture("../../textures/sketch_scene/bench.png");
-        benchObject->setTexture(&benchTexture);
+        Texture* benchTexture = new Texture("../../textures/sketch_scene/bench.png");
+        benchObject->setTexture(benchTexture);
         benchObject->setPosition(glm::vec3(2.0f, - 1.0f, -2.0f));
         benchObject->setRotation(glm::vec3(0.0f, 120.0f, 0.0f));
         
@@ -269,13 +283,15 @@ public:
         // RENDER ON DEFAULT FBO
         glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
+        
         glBlitFramebuffer(
             0, 0, width, height,
             0, 0, width, height,
             GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
         );
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     
     void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
@@ -329,26 +345,28 @@ public:
         screen_shader->Delete();
     }
 
-    void drawImGui()
+    void drawImGui() override
     {
-        if (ImGui::CollapsingHeader((m_name + " objects").c_str()))
+        if (!ImGui::CollapsingHeader(m_name.c_str()))
         {
-            ImGui::SeparatorText("Hatch");
-            ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
-            ImGui::SeparatorText("Colors");
-            ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
-            ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
-            ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
-            ImGui::SliderFloat("Color brightness", &colorBrightness, 0.0f, 1.0f);
-            ImGui::SeparatorText("Edge");
-            ImGui::SliderFloat("Edge threshold", &edgeThreshold, 0.0f, 2.0f, "%.3f");
-            ImGui::SeparatorText("Noise");
-            ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
-            ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
-            ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
-
-            ShaderScene::drawImGui();
+            return;
         }
+
+        ImGui::SeparatorText("Hatch");
+        ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
+        ImGui::SeparatorText("Colors");
+        ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
+        ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
+        ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
+        ImGui::SliderFloat("Color brightness", &colorBrightness, 0.0f, 1.0f);
+        ImGui::SeparatorText("Edge");
+        ImGui::SliderFloat("Edge threshold", &edgeThreshold, 0.0f, 2.0f, "%.3f");
+        ImGui::SeparatorText("Noise");
+        ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
+        ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
+        ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
+
+        ShaderScene::drawImGui();
     }
 
 private:

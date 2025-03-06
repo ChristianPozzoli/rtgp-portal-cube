@@ -26,6 +26,7 @@
 #include <utils/scene.h>
 #include <utils/shaderscene.h>
 #include "sketchshaderscene.h"
+#include "celshadingshaderscene.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -36,6 +37,8 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <unordered_map>
+
+static const string SHADER_PATH = "../../shaders/";
 
 GLuint screenWidth = 1920, screenHeight = 1080;
 GLfloat fieldOfViewY = 45.0f;
@@ -113,7 +116,6 @@ ShaderScene* currentScene = nullptr;
 unordered_map<PlaneObject*, ShaderScene*> planeCubeMap;
 
 void setup_illum_shader(Shader&);
-void setup_cel_shading(Shader&);
 
 glm::mat4 ModifyProjectionMatrix(const glm::mat4& projection, const glm::vec4& clipPlane);
 
@@ -166,19 +168,22 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
     
-    Shader illum_shader = Shader("illumination_model.vert", "illumination_model.frag");
-    Shader cel_shading = Shader("illumination_model.vert", "cel_shading.frag");
-    Shader color_shader = Shader("basic.vert", "fullcolor.frag");
-    Shader depth_shader = Shader("basic.vert", "depth.frag");
+    Shader illum_shader = Shader(
+        (SHADER_PATH + "illumination_model.vert").c_str(),
+        (SHADER_PATH + "illumination_model.frag").c_str()
+    );
+    Shader color_shader = Shader(
+        (SHADER_PATH + "basic.vert").c_str(),
+        (SHADER_PATH + "fullcolor.frag").c_str()
+    );
+    Shader depth_shader = Shader(
+        (SHADER_PATH + "basic.vert").c_str(),
+        (SHADER_PATH + "depth.frag").c_str()
+    );
 
     SetupShader(illum_shader.Program);
     PrintCurrentShader(current_subroutine);
 
-    Texture uvTexture("../../textures/UV_Grid_Sm.png");
-
-    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale);
-    bunnyObject.setTexture(&uvTexture);
-    bunnyObject.setColor(diffuseColor);
 
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, spherePosition, sphereScale);
     sphereObject.setColor(diffuseColor);
@@ -193,16 +198,16 @@ int main()
 
     currentScene = &mainScene;
     
-    SketchShaderScene frontScene("FrontSketchScene", window, width, height);
-    frontScene.setup_scene();
+    SketchShaderScene sketchScene("Sketch Scene", window, width, height);
+    sketchScene.setup_scene();
     
-    ShaderScene rightScene("RightScene");
-    rightScene.add_external_object(&bunnyObject);
+    CelShadingShaderScene celShadingScene("CelShading Scene", window, width, height);
+    celShadingScene.setup_scene();
     
     ModelObject cubeObject2("Cube_2", "../../models/cube.obj", illum_shader, cubePosition, cubeScale / 2);
     cubeObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
         
-    ModelObject bunnyObject2("Bunny_2", "../../models/bunny_lp.obj", cel_shading, bunnyPosition, bunnyScale / 2);
+    ModelObject bunnyObject2("Bunny_2", "../../models/bunny_lp.obj", illum_shader, bunnyPosition, bunnyScale / 2);
     bunnyObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
     
     ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
@@ -231,8 +236,8 @@ int main()
     cubeStructure.addChild(&leftPlaneObject);
     cubeStructure.addChild(&backPlaneObject);
 
-    planeCubeMap[&frontPlaneObject] = &frontScene;
-    planeCubeMap[&rightPlaneObject] = &rightScene;
+    planeCubeMap[&frontPlaneObject] = &sketchScene;
+    planeCubeMap[&rightPlaneObject] = &celShadingScene;
     planeCubeMap[&leftPlaneObject] = &leftScene;
     planeCubeMap[&backPlaneObject] = &backScene;
 
@@ -275,8 +280,6 @@ int main()
             if (ImGui::ColorEdit3("Ground color", (float*)&groundColor)) { floorObject.setColor(groundColor); }
             if(ImGui::ColorEdit3("Objects color", (float*)&diffuseColor)) {
                 sphereObject.setColor(diffuseColor);
-                // cubeObject.setColor(diffuseColor);
-                bunnyObject.setColor(diffuseColor);
             }
 			
             if (ImGui::CollapsingHeader("Portals"))
@@ -308,15 +311,14 @@ int main()
                 if (ImGui::InputFloat("CubeStructure scale", &cubeStructureScale)) { cubeStructure.setScale(cubeStructureScale); }
             }
             
-			ImGui::SeparatorText("Bunny");
-			if (ImGui::InputFloat3("Bunny position", (float*)&bunnyPosition)) { bunnyObject.setPosition(bunnyPosition); }
-            if (ImGui::InputFloat("Bunny scale", &bunnyScale)) { bunnyObject.setScale(bunnyScale); }
-            
 			ImGui::SeparatorText("Sphere");
 			if (ImGui::InputFloat3("Sphere position", (float*)&spherePosition)) { sphereObject.setPosition(spherePosition); }
             if (ImGui::InputFloat("Sphere scale", &sphereScale)) { sphereObject.setScale(sphereScale); }
 
-            frontScene.drawImGui();
+            currentScene->drawImGui();
+            for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i) {
+                (*i->second).drawImGui();
+            }
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
@@ -422,7 +424,6 @@ int main()
         glDepthMask(0xFF);
 		
         setup_illum_shader(illum_shader);
-        setup_cel_shading(cel_shading);
         
         for (uint8_t i = 0; i < visiblePlanesSize; ++i)
         {
@@ -467,7 +468,7 @@ int main()
     // we delete the Shader Programs
     color_shader.Delete();
     illum_shader.Delete();
-    frontScene.delete_scene();
+    sketchScene.delete_scene();
     // we close and delete the created context
     glfwTerminate();
     return 0;
@@ -703,21 +704,6 @@ void setup_illum_shader(Shader& illum_shader)
     glUniform1f(shininessLocation, shininess);
     glUniform1f(alphaLocation, alpha);
     glUniform1f(f0Location, F0);
-}
-
-void setup_cel_shading(Shader& cel_shading)
-{
-    cel_shading.Use(subroutines[current_subroutine]);
-
-    GLint pointLightLocation = glGetUniformLocation(cel_shading.Program, "pointLightPosition");
-    GLint matSpecularLocation = glGetUniformLocation(cel_shading.Program, "specularColor");
-    GLint matAmbientLocation = glGetUniformLocation(cel_shading.Program, "ambientColor");
-    GLint thicknessLocation = glGetUniformLocation(cel_shading.Program, "thickness");
-    
-    glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-    glUniform3fv(matAmbientLocation, 1, glm::value_ptr(ambientColor));
-    glUniform3fv(matSpecularLocation, 1, glm::value_ptr(specularColor));
-    glUniform1f(thicknessLocation, celShadingThickness);
 }
 
 glm::mat4 ModifyProjectionMatrix(const glm::mat4& projection, const glm::vec4& clipPlane)

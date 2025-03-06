@@ -49,19 +49,11 @@ uniform float timer;
 uniform sampler2D tex;
 uniform float textured;
 
-subroutine vec3 ill_model();
-
-// Subroutine Uniform (it is conceptually similar to a C pointer function)
-subroutine uniform ill_model Illumination_Model;
-
 vec3 color()
 {
   return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV), textured));
 }
 
-//////////////////////////////////////////
-// a subroutine for a simple noise shader
-subroutine(ill_model)
 vec3 Lambert()
 {
   vec3 N = normalize(vNormal);
@@ -77,9 +69,9 @@ vec3 FullLambert()
   vec3 N = normalize(vNormal);
   vec3 L = normalize(lightDir);
 
-  float lambertian = max(dot(L, N), 0.0);
+  float lambertian = max(dot(L, N), 0.05);
 
-  return lambertian * color();
+  return mix(lambertian * color(), vec3(1.0), lambertian > 0.9);
 }
 
 vec3 LambertBW()
@@ -94,7 +86,5 @@ vec3 LambertBW()
 
 void main(void)
 {
-    float lambertian = max(dot(normalize(lightDir), normalize(vNormal)), 0.05);
-
-  	colorFrag = vec4(mix(lambertian * color(), vec3(1.0), lambertian > 0.9), 1.0);
+  	colorFrag = vec4(FullLambert(), 1.0);
 }

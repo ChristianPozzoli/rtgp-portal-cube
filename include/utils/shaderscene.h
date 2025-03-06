@@ -1,23 +1,19 @@
 #pragma once
 
-using namespace std;
-
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_opengl3.h>
 
 #include <string>
-#include <utils/scene.h>
 #include <utils/camera.h>
 #include <utils/shader.h>
-#include <utils/drawablesceneobject.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <glad/glad.h>
+
+using namespace std;
 
 class ShaderScene
 {
@@ -62,19 +58,23 @@ public:
     
     virtual void drawImGui()
     {
-        if (ImGui::CollapsingHeader((m_name + " objects").c_str()))
+        if (!ImGui::TreeNode((m_name + " objects").c_str()))
         {
-            for (vector<DrawableSceneObject*>::iterator iter = external_objects->begin(); iter < external_objects->end(); ++iter)
-            {
-                DrawableSceneObject* object = *iter;
-                object->drawImGui();
-            }
-            for (vector<DrawableSceneObject*>::iterator iter = internal_objects->begin(); iter < internal_objects->end(); ++iter)
-            {
-                DrawableSceneObject* object = *iter;
-                object->drawImGui();
-            }
+            return;
         }
+
+        for (vector<DrawableSceneObject*>::iterator iter = external_objects->begin(); iter < external_objects->end(); ++iter)
+        {
+            DrawableSceneObject* object = *iter;
+            object->drawImGui();
+        }
+        for (vector<DrawableSceneObject*>::iterator iter = internal_objects->begin(); iter < internal_objects->end(); ++iter)
+        {
+            DrawableSceneObject* object = *iter;
+            object->drawImGui();
+        }
+
+        ImGui::TreePop();
     }
 
     virtual void draw(glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
@@ -83,6 +83,8 @@ public:
     }
 
 protected:
+    const string SHADER_PATH = "../../shaders/";
+
     std::string m_name;
     vector<DrawableSceneObject*>* external_objects;
     vector<DrawableSceneObject*>* internal_objects;

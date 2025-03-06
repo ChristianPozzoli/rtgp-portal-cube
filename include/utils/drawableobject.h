@@ -21,7 +21,11 @@ class DrawableObject
 
         ~DrawableObject()
         {
-
+            if(m_texture)
+            {
+                delete m_texture;
+                m_texture = 0;
+            }
         }
 
         Shader& shader()

@@ -13,7 +13,7 @@ class Shader
 public:
     GLuint Program;
     
-    Shader(const GLchar* vertexPath, const GLchar* geometryPath, const GLchar* fragmentPath) {
+    Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath) {
         string vertexCode, geometryCode, fragmentCode;
         ifstream vShaderFile, gShaderFile, fShaderFile;
 

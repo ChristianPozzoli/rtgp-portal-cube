@@ -9,7 +9,6 @@ uniform sampler2D normalTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D screenTexture;
 uniform sampler2D hatchTexture;
-uniform sampler2D paperTexture;
 
 uniform vec3 background_color = vec3(1.0);
 uniform vec3 edge_color = vec3(0.25);
