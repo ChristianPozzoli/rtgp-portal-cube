@@ -18,6 +18,7 @@
 #endif
 
 #include <utils/shader.h>
+#include <utils/framebuffer.h>
 #include <utils/texture.h>
 #include <utils/model.h>
 #include <utils/camera.h>
@@ -45,6 +46,13 @@ public:
     {
         delete screen_quad;
         delete lut_cel_shading_texture;
+
+        glDeleteRenderbuffers(1, &rbo);
+        delete screen_fbo;
+
+        delete cel_shading;
+        delete back_face_shader;
+        delete screen_shader;
     }
 
     void setup_scene() override
@@ -122,35 +130,14 @@ public:
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         // SCREEN FBO
-        glGenFramebuffers(1, &screen_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
-
-        glGenTextures(1, &screen_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_fbo_texture, 0);
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            cout << "ERROR: Framebuffer is not complete" << endl;
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        screen_fbo = new FrameBuffer(width, height, rbo);
     }
 
     void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
     {
         glEnable(GL_DEPTH_TEST);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
+        screen_fbo->bind();
         glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -173,7 +160,7 @@ public:
         glDisable(GL_CULL_FACE);
         
         // RENDER ON DEFAULT FBO
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo->fbo());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
@@ -193,23 +180,13 @@ public:
         screen_shader->SetInt("screenTexture", 0);
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, screen_fbo->texture());
         
         glDisable(GL_DEPTH_TEST);
         
         screen_quad->draw();
         
         glEnable(GL_DEPTH_TEST);
-    }
-
-    void delete_scene()
-    {
-        glDeleteRenderbuffers(1, &rbo);
-        glDeleteFramebuffers(1, &screen_fbo);
-
-        cel_shading->Delete();
-        back_face_shader->Delete();
-        screen_shader->Delete();
     }
 
     void drawImGui() override
@@ -247,12 +224,12 @@ public:
     }
 
 private:
-    glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
     GLFWwindow* window;
     GLint width;
     GLint height;
-
-
+    
+    glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
+    
     Shader* cel_shading;
     Shader* back_face_shader;
     Shader* screen_shader;
@@ -262,8 +239,7 @@ private:
     ScreenQuadObject* screen_quad;
 
     GLuint rbo;
-    GLuint screen_fbo;
-    GLuint screen_fbo_texture;
+    FrameBuffer* screen_fbo;
 
     int lut_current_index = 2;
     const char* lut_items[9] = {

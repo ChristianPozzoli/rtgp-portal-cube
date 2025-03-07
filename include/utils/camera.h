@@ -27,7 +27,7 @@ public:
     glm::vec3 WorldUp;
     glm::vec3 Right;
 
-    GLboolean onGround;
+    bool onGround;
 
     GLfloat Yaw;
     GLfloat Pitch;

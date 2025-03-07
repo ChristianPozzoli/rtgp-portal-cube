@@ -19,6 +19,7 @@
 #endif
 
 #include <utils/shader.h>
+#include <utils/framebuffer.h>
 #include <utils/texture.h>
 #include <utils/model.h>
 #include <utils/camera.h>
@@ -30,8 +31,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#define PI 3.14159265359
 
 using namespace std;
 
@@ -46,16 +45,24 @@ public:
         delete screen_quad;
         delete spheremapObject;
 
-        delete illum_shader;
+        delete normal_fbo;
+        delete lambert_depth_fbo;
+        delete spheremap_fbo;
+        delete color_fbo;
+
+        delete lambert_depth_shader;
         delete color_shader;
         delete normal_shader;
         delete spheremap_shader;
         delete screen_shader;
+
+        glDeleteRenderbuffers(1, &rbo);
+        rbo = 0;
     }
 
     void setup_scene() override
     {
-        illum_shader = new Shader(
+        lambert_depth_shader = new Shader(
             (SHADER_PATH + "illumination_model.vert").c_str(),
             (SHADER_PATH + "sketch_shaders/lambert-depth.frag").c_str()
         );
@@ -80,32 +87,32 @@ public:
         hatch_texture->setWrapS(GL_REPEAT);
         hatch_texture->setWrapT(GL_REPEAT);
         
-        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(- 6.0f, - 0.7f, 9.0f), 0.1f);
+        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *lambert_depth_shader, glm::vec3(- 6.0f, - 0.7f, 9.0f), 0.1f);
         bunnyObject->setRotation(glm::vec3(0.0f, 90.0f, 0.0f));
         bunnyObject->setColor(glm::vec3(1.0f, 0.441f, 0.0f));
 
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(- 3.5f, - 0.55f, 16.0f), 0.35f);
+        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *lambert_depth_shader, glm::vec3(- 3.5f, - 0.55f, 16.0f), 0.35f);
         sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 
-        ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
+        ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *lambert_depth_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
         cubeObject->setColor(glm::vec3(0.0f, 0.0f, 1.0f));
 
         spheremapObject = new ModelObject("sphereMap", "../../models/sphere.obj", *spheremap_shader);
         spheremapObject->setTexture(hatch_texture);
 
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
+        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *lambert_depth_shader, glm::vec3(0.0f, -1.0f, 0.0f));
         floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
         floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
         
-        ModelObject* treeObject = new ModelObject("Stylized tree", "../../models/sketch_scene/stylized_tree_trunk.fbx", *illum_shader);
+        ModelObject* treeObject = new ModelObject("Stylized tree", "../../models/sketch_scene/stylized_tree_trunk.fbx", *lambert_depth_shader);
         treeObject->setPosition(glm::vec3(3.0f, - 1.0f, -2.0f));
         treeObject->setScale(0.25f);
         treeObject->setColor(glm::vec3(0.343f, 0.212f, 0.0f));
-        ModelObject* leavesObject = new ModelObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.fbx", *illum_shader);
+        ModelObject* leavesObject = new ModelObject("Leaves", "../../models/sketch_scene/stylized_tree_leaves.fbx", *lambert_depth_shader);
         leavesObject->setColor(glm::vec3(1.0f, 0.681f, 0.991f));
         treeObject->addChild(leavesObject);
         
-        ModelObject* oldTreeObject = new ModelObject("Old tree", "../../models/sketch_scene/old_tree.fbx", *illum_shader);
+        ModelObject* oldTreeObject = new ModelObject("Old tree", "../../models/sketch_scene/old_tree.fbx", *lambert_depth_shader);
         Texture* oldTreeTexture = new Texture("../../textures/sketch_scene/old_tree.png");
         oldTreeObject->setTexture(oldTreeTexture);
         oldTreeObject->setPosition(glm::vec3(-2.0f, - 0.6f, 16.0f));
@@ -113,19 +120,19 @@ public:
         oldTreeObject->setScale(0.75f);
         oldTreeObject->setColor(glm::vec3(1.0f, 0.559f, 0.0f));
         
-        ModelObject* benchObject = new ModelObject("Bench", "../../models/sketch_scene/bench.fbx", *illum_shader);
+        ModelObject* benchObject = new ModelObject("Bench", "../../models/sketch_scene/bench.fbx", *lambert_depth_shader);
         Texture* benchTexture = new Texture("../../textures/sketch_scene/bench.png");
         benchObject->setTexture(benchTexture);
         benchObject->setPosition(glm::vec3(2.0f, - 1.0f, -2.0f));
         benchObject->setRotation(glm::vec3(0.0f, 120.0f, 0.0f));
         
-        ModelObject* swingObject = new ModelObject("Swing", "../../models/sketch_scene/swing.fbx", *illum_shader);
+        ModelObject* swingObject = new ModelObject("Swing", "../../models/sketch_scene/swing.fbx", *lambert_depth_shader);
         swingObject->setColor(glm::vec3(0.0f, 0.412f, 1.0f));
         swingObject->setPosition(glm::vec3(0.2f, -0.5f, 15.5f));
         swingObject->setRotation(glm::vec3(0.0f, 5.0f, 0.0f));
         swingObject->setScale(0.6f);
         
-        ModelObject* sliderObject = new ModelObject("Slider", "../../models/sketch_scene/slider.fbx", *illum_shader);
+        ModelObject* sliderObject = new ModelObject("Slider", "../../models/sketch_scene/slider.fbx", *lambert_depth_shader);
         sliderObject->setColor(glm::vec3(1.0f, 1.0f, 0.0f));
         sliderObject->setPosition(glm::vec3(18.0f, 1.8f, 10.0f));
         sliderObject->setRotation(glm::vec3(0.0f, - 120.0f, 0.0f));
@@ -154,72 +161,16 @@ public:
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         // NORMAL FBO
-        glGenFramebuffers(1, &normal_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
-
-        glGenTextures(1, &normal_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normal_fbo_texture, 0);
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        normal_fbo = new FrameBuffer(width, height, rbo);
         
         // DEPTH FBO
-        glGenFramebuffers(1, &lambert_depth_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, lambert_depth_fbo);
-
-        glGenTextures(1, &lambert_depth_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo_texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lambert_depth_fbo_texture, 0);
-        
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        lambert_depth_fbo = new FrameBuffer(width, height, rbo);
         
         // SPHEREMAP FBO
-        glGenFramebuffers(1, &spheremap_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
+        spheremap_fbo = new FrameBuffer(width, height, rbo);
 
-        glGenTextures(1, &spheremap_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, spheremap_fbo_texture, 0);
-        
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-        // SCREEN FBO
-        glGenFramebuffers(1, &color_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
-
-        glGenTextures(1, &color_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_fbo_texture, 0);
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        // COLOR FBO
+        color_fbo = new FrameBuffer(width, height, rbo);
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -231,27 +182,29 @@ public:
 
     void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
     {
-        setup_illum_shader(illum_shader);
-        normal_shader->Use();
         normal_shader->SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
+        normal_shader->SetFloat("highlight_threshold", highlightThreshold);
         
         glEnable(GL_DEPTH_TEST);
         
         // RENDER ON NORMAL FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
+        normal_fbo->bind();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection, normal_shader);
         
         // RENDER ON DEPTH FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, lambert_depth_fbo);
+        lambert_depth_shader->SetFloat("highlight_threshold", highlightThreshold);
+        lambert_depth_shader->SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
+
+        lambert_depth_fbo->bind();
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection);
         
         // RENDER ON SPHEREMAP FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
+        spheremap_fbo->bind();
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -263,7 +216,7 @@ public:
             camera->WorldFront.z, 0.0, camera->WorldFront.x,  0.0,
             0.0,                  0.0, 0.0,                   1.0
         );
-        spheremap_shader->SetFloat("viewAngleY", glm::asin(camera->Front.y) / PI);
+        spheremap_shader->SetFloat("viewAngleY", glm::asin(camera->Front.y) / glm::pi<float>());
         spheremap_shader->SetFloat("hatching_repeat", hatchingRepeat);
         
         spheremapObject->draw(spheremapViewMatrix, projection);
@@ -271,13 +224,13 @@ public:
         glDepthFunc(GL_LESS);
         
         // RENDER ON SCREEN FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
+        color_fbo->bind();
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection, color_shader);
         
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, color_fbo);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, color_fbo->fbo());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
@@ -303,40 +256,26 @@ public:
         screen_shader->SetVec3("edge_color", 1, glm::value_ptr(edgeColor));
         screen_shader->SetFloat("color_saturation", colorSaturation);
         screen_shader->SetFloat("color_brightness", colorBrightness);
+        screen_shader->SetFloat("highlight_threshold", highlightThreshold);
         screen_shader->SetFloat("edge_threshold", edgeThreshold);
         screen_shader->SetFloat("noise_frequency_edge", noiseFrequencyEdge);
         screen_shader->SetFloat("noise_strength_edge", noiseStrengthEdge);
         screen_shader->SetFloat("noise_strength_color", noiseStrengthColor);
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, normal_fbo->texture());
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo->texture());
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, color_fbo->texture());
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, spheremap_fbo->texture());
         
         glDisable(GL_DEPTH_TEST);
         
         screen_quad->draw();
         
         glEnable(GL_DEPTH_TEST);
-    }
-
-    void delete_scene()
-    {
-        glDeleteRenderbuffers(1, &rbo);
-        glDeleteFramebuffers(1, &normal_fbo);
-        glDeleteFramebuffers(1, &lambert_depth_fbo);
-        glDeleteFramebuffers(1, &spheremap_fbo);
-        glDeleteFramebuffers(1, &color_fbo);
-
-        illum_shader->Delete();
-        color_shader->Delete();
-        normal_shader->Delete();
-        spheremap_shader->Delete();
-        screen_shader->Delete();
     }
 
     void drawImGui() override
@@ -350,6 +289,7 @@ public:
         ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
         ImGui::SeparatorText("Colors");
         ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
+        ImGui::SliderFloat("Highlight threshold", &highlightThreshold, 0.0f, 1.0f, "%.3f");
         ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
         ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
         ImGui::SliderFloat("Color brightness", &colorBrightness, 0.0f, 1.0f);
@@ -371,26 +311,18 @@ private:
 
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 
-    GLfloat Kd = 0.5f;
-    GLfloat Ks = 0.4f;
-    GLfloat Ka = 0.1f;
-    GLfloat shininess = 25.0f;
-    GLfloat alpha = 0.2f;
-    GLfloat F0 = 0.9f;
-
     float hatchingRepeat = 40.0f;
     glm::vec3 backgroundColor = glm::vec3(1.0f);
     glm::vec3 edgeColor = glm::vec3(0.25f);
     float colorSaturation = 0.4f;
     float colorBrightness = 0.9f;
+    float highlightThreshold = 0.9f;
     float edgeThreshold = 0.005f;
     float noiseFrequencyEdge = 40.0f;
     float noiseStrengthEdge = 0.00175f;
     float noiseStrengthColor = 0.0025f;
 
-    void setup_illum_shader(Shader&);
-
-    Shader* illum_shader;
+    Shader* lambert_depth_shader;
     Shader* color_shader;
     Shader* normal_shader;
     Shader* spheremap_shader;
@@ -400,34 +332,9 @@ private:
     ModelObject* spheremapObject;
 
     GLuint rbo;
-    GLuint normal_fbo;
-    GLuint normal_fbo_texture;
-    GLuint lambert_depth_fbo;
-    GLuint lambert_depth_fbo_texture;
-    GLuint spheremap_fbo;
-    GLuint spheremap_fbo_texture;
-    GLuint color_fbo;
-    GLuint color_fbo_texture;
 
-    void setup_illum_shader(Shader* illum_shader)
-    {
-        illum_shader->Use();
-        GLint pointLightLocation = glGetUniformLocation(illum_shader->Program, "pointLightPosition");
-        GLint matSpecularLocation = glGetUniformLocation(illum_shader->Program, "specularColor");
-        GLint matAmbientLocation = glGetUniformLocation(illum_shader->Program, "ambientColor");
-        GLint kdLocation = glGetUniformLocation(illum_shader->Program, "Kd");
-        GLint ksLocation = glGetUniformLocation(illum_shader->Program, "Ks");
-        GLint kaLocation = glGetUniformLocation(illum_shader->Program, "Ka");
-        GLint shininessLocation = glGetUniformLocation(illum_shader->Program, "shininess");
-        GLint alphaLocation = glGetUniformLocation(illum_shader->Program, "alpha");
-        GLint f0Location = glGetUniformLocation(illum_shader->Program, "F0");
-        
-        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-        glUniform1f(kdLocation, Kd);
-        glUniform1f(ksLocation, Ks);
-        glUniform1f(kaLocation, Ka);
-        glUniform1f(shininessLocation, shininess);
-        glUniform1f(alphaLocation, alpha);
-        glUniform1f(f0Location, F0);
-    }
+    FrameBuffer* normal_fbo;
+    FrameBuffer* lambert_depth_fbo;
+    FrameBuffer* spheremap_fbo;
+    FrameBuffer* color_fbo;
 };

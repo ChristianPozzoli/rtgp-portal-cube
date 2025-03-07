@@ -43,8 +43,6 @@ public:
     virtual void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
     {}
 
-    virtual void delete_scene() {}
-
     void add_external_object(DrawableSceneObject* obj)
     {
         external_objects->push_back(obj);

@@ -62,9 +62,12 @@ GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
 GLfloat orientationY = 0.0f;
-GLfloat spin_speed = 15.0f;
-GLboolean spinning = GL_FALSE;
+GLfloat positionY = 0.0f;
+GLfloat spin_speed = 10.0f;
+GLfloat float_speed = 2.0f;
+GLfloat float_amount = 0.08f;
 
+GLboolean spinning = GL_FALSE;
 GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
@@ -97,9 +100,9 @@ GLfloat planeBorder = 0.0f;
 glm::vec3 bunnyPosition(0.0f, 1.0f, -5.0f);
 GLfloat bunnyScale = 0.5f;
 
-glm::vec3 cubeStructurePosition(0.0f, 1.0f, -3.0f);
+glm::vec3 cubeStructurePosition(0.0f, 0.5f, 0.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
-GLfloat cubeStructureScale = 3.5f;
+GLfloat cubeStructureScale = 2.5f;
 
 glm::vec3 mainScenePosition(0.0f, 0.0f, 0.0f);
 glm::vec3 mainSceneRotation(0.0f, 0.0f, 0.0f);
@@ -266,20 +269,24 @@ int main()
 
             ImGui::Begin("Parameters");
 			
-            ImGui::SeparatorText("FoV");
+            ImGui::SeparatorText("Camera");
 			if(ImGui::SliderFloat("FoV X", &fieldOfViewX, 0.0f, 180.0f)) {
 				fieldOfViewY = glm::degrees(glm::atan(glm::tan(glm::radians(fieldOfViewX) / 2) * screenHeight / screenWidth) * 2);
 			}
 			ImGui::SliderFloat("FoV Y", &fieldOfViewY, 0.0f, 180.0f);
-			
+            ImGui::Checkbox("On ground", &camera.onGround);
+            ImGui::InputFloat3("Position", (float*)&camera.Position);
+            ImGui::SliderFloat("Speed", &camera.MovementSpeed, 0.0f, 20.0f);
+
             ImGui::SeparatorText("Properties");
             ImGui::Checkbox("Wireframe", (bool*)&wireframe);
             ImGui::Checkbox("Spinning", (bool*)&spinning);
-			
-			ImGui::SeparatorText("Colors");
-            if (ImGui::ColorEdit3("Ground color", (float*)&groundColor)) { floorObject.setColor(groundColor); }
-            if(ImGui::ColorEdit3("Objects color", (float*)&diffuseColor)) {
-                sphereObject.setColor(diffuseColor);
+            if (ImGui::TreeNode("Spinning options")) {
+                ImGui::SliderFloat("Rotation speed", &spin_speed, 0.0f, 180.0f);
+                ImGui::SliderFloat("Floating speed", &float_speed, 0.0f, 50.0f);
+                ImGui::SliderFloat("Floating amount", &float_amount, 0.0f, 1.0f);
+
+                ImGui::TreePop();
             }
 			
             if (ImGui::CollapsingHeader("Portals"))
@@ -306,14 +313,10 @@ int main()
                 }
             
                 ImGui::SeparatorText("PortalCube");
-                if (ImGui::InputFloat3("CubeStructure position", (float*)&cubeStructurePosition)) { cubeStructure.setPosition(cubeStructurePosition); }
-                if (ImGui::InputFloat3("CubeStructure rotation", (float*)&cubeStructureRotation)) { cubeStructure.setRotation(cubeStructureRotation); }
+                if (ImGui::DragFloat3("CubeStructure position", (float*)&cubeStructurePosition)) { cubeStructure.setPosition(cubeStructurePosition); }
+                if (ImGui::DragFloat3("CubeStructure rotation", (float*)&cubeStructureRotation)) { cubeStructure.setRotation(cubeStructureRotation); }
                 if (ImGui::InputFloat("CubeStructure scale", &cubeStructureScale)) { cubeStructure.setScale(cubeStructureScale); }
             }
-            
-			ImGui::SeparatorText("Sphere");
-			if (ImGui::InputFloat3("Sphere position", (float*)&spherePosition)) { sphereObject.setPosition(spherePosition); }
-            if (ImGui::InputFloat("Sphere scale", &sphereScale)) { sphereObject.setScale(sphereScale); }
 
             currentScene->drawImGui();
             for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i) {
@@ -322,7 +325,7 @@ int main()
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
-				ImGui::InputFloat3("Light Position", (float*)&lightPos0);
+				ImGui::DragFloat3("Light Position", (float*)&lightPos0);
 			    ImGui::SeparatorText("Cel shading parameters");
 				ImGui::SliderFloat("Thickness", (float*)&celShadingThickness, 0.0f, 1.0f);
                 ImGui::SeparatorText("Illumination model parameters");
@@ -356,11 +359,17 @@ int main()
         
         if (spinning)
         {
-            orientationY+=(deltaTime*spin_speed);
+            orientationY += deltaTime * spin_speed;
+            orientationY = glm::mod(orientationY, 360.0f);
+            positionY += deltaTime * float_speed;
+            positionY = glm::mod(positionY, 2 * glm::pi<float>());
             
             glm::vec3 portalCubeRotation = cubeStructure.rotation();
+            glm::vec3 portalCubePosition = cubeStructure.position();
             portalCubeRotation.y = orientationY;
+            portalCubePosition.y = cubeStructurePosition.y + glm::sin(positionY) * float_amount;
             cubeStructure.setRotation(portalCubeRotation);
+            cubeStructure.setPosition(portalCubePosition);
         }
         
         /////////////////// SETUP /////////////////////////////////////////////
@@ -377,8 +386,15 @@ int main()
         
         /////////////////// OBJECTS OUTSIDE THE PORTAL ////////////////////////
         
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+        
         currentScene->update_scene(&camera, view, projection);
+        
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        
         currentScene->draw(view, projection);
+
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
         
         cubeStructure.draw(view, projection);
         
@@ -442,7 +458,9 @@ int main()
             
             glClear(GL_DEPTH_BUFFER_BIT);
             scene->update_scene(&camera, view, portalProjection);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             scene->draw(view, projection);
+            glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
             
             if(planeBorder > 0) {
                 glStencilFunc(GL_NOTEQUAL, i + 1, 0xFF);
@@ -464,11 +482,6 @@ int main()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
-    // when I exit from the graphics loop, it is because the application is closing
-    // we delete the Shader Programs
-    color_shader.Delete();
-    illum_shader.Delete();
-    sketchScene.delete_scene();
     // we close and delete the created context
     glfwTerminate();
     return 0;

@@ -1,4 +1,4 @@
-#pragma once //Used to include this only once
+#pragma once
 
 using namespace std;
 
@@ -160,6 +160,14 @@ public:
         }
     }
 
+    ~Shader()
+    {
+        if(!Program) return;
+        
+        glDeleteProgram(this->Program);
+        Program = 0;
+    }
+    
     void SelectSubroutine(string name) {
         // we search inside the Shader Program the name of the subroutine currently selected, and we get the numerical index
         GLuint index = glGetSubroutineIndex(this->Program, GL_FRAGMENT_SHADER, name.c_str());
@@ -211,6 +219,7 @@ public:
     void Delete()
     {
         glDeleteProgram(this->Program);
+        Program = 0;
     }
 
 private:
