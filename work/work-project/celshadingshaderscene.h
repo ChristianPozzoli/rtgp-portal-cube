@@ -241,7 +241,7 @@ private:
     GLuint rbo;
     FrameBuffer* screen_fbo;
 
-    int lut_current_index = 2;
+    int lut_current_index = 6;
     const char* lut_items[9] = {
         "LUT_cel_shading_1.png",
         "LUT_cel_shading_2.png",

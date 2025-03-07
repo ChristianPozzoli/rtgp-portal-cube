@@ -318,10 +318,18 @@ int main()
                 if (ImGui::InputFloat("CubeStructure scale", &cubeStructureScale)) { cubeStructure.setScale(cubeStructureScale); }
             }
 
+            ImGui::NewLine();
+
+            ImGui::SeparatorText("Current scene");
             currentScene->drawImGui();
-            for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i) {
+            ImGui::SeparatorText("Cube scenes");
+            for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i)
+            {
                 (*i->second).drawImGui();
             }
+            
+            ImGui::Separator();
+            ImGui::NewLine();
 
 			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
 			{
