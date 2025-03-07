@@ -160,7 +160,7 @@ public:
         glDisable(GL_CULL_FACE);
         
         // RENDER ON DEFAULT FBO
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo->fbo());
+        screen_fbo->bind_read();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
@@ -180,7 +180,7 @@ public:
         screen_shader->SetInt("screenTexture", 0);
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo->texture());
+        glBindTexture(GL_TEXTURE_2D, screen_fbo->texture_name());
         
         glDisable(GL_DEPTH_TEST);
         

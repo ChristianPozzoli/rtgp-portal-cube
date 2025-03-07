@@ -230,7 +230,7 @@ public:
         
         draw_objects(view, projection, color_shader);
         
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, color_fbo->fbo());
+        color_fbo->bind_read();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
@@ -263,13 +263,13 @@ public:
         screen_shader->SetFloat("noise_strength_color", noiseStrengthColor);
         
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, normal_fbo->texture());
+        glBindTexture(GL_TEXTURE_2D, normal_fbo->texture_name());
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo->texture());
+        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo->texture_name());
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, color_fbo->texture());
+        glBindTexture(GL_TEXTURE_2D, color_fbo->texture_name());
         glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, spheremap_fbo->texture());
+        glBindTexture(GL_TEXTURE_2D, spheremap_fbo->texture_name());
         
         glDisable(GL_DEPTH_TEST);
         

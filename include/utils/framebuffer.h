@@ -7,13 +7,13 @@ using namespace std;
 
 class FrameBuffer {
 public:
-    FrameBuffer(GLint width, GLint height, GLuint rbo) : m_rbo(rbo), m_fbo(0), m_texture(0)
+    FrameBuffer(GLint width, GLint height, GLuint rbo) : m_rbo(rbo), m_fbo_name(0), m_texture_name(0)
     {
-        glGenFramebuffers(1, &m_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+        glGenFramebuffers(1, &m_fbo_name);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_name);
 
-        glGenTextures(1, &m_texture);
-        glBindTexture(GL_TEXTURE_2D, m_texture);
+        glGenTextures(1, &m_texture_name);
+        glBindTexture(GL_TEXTURE_2D, m_texture_name);
         
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
@@ -21,7 +21,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture_name, 0);
         
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -34,27 +34,35 @@ public:
     }
 
     ~FrameBuffer() {
-        glDeleteFramebuffers(1, &m_fbo);
-        glDeleteTextures(1, &m_texture);
+        glDeleteFramebuffers(1, &m_fbo_name);
+        glDeleteTextures(1, &m_texture_name);
 
-        m_fbo = 0;
-        m_texture = 0;
+        m_fbo_name = 0;
+        m_texture_name = 0;
     }
 
-    GLuint fbo() {
-        return m_fbo;
+    GLuint fbo_name() {
+        return m_fbo_name;
     }
 
-    GLuint rbo() {
+    GLuint rbo_name() {
         return m_rbo;
     }
 
-    GLuint texture() {
-        return m_texture;
+    GLuint texture_name() {
+        return m_texture_name;
     }
 
     void bind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_name);
+    }
+
+    void bind_read() {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo_name);
+    }
+
+    void bind_draw() {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo_name);
     }
 
     void unbind() {
@@ -62,7 +70,7 @@ public:
     }
 
 private:
-    GLuint m_fbo;
+    GLuint m_fbo_name;
     GLuint m_rbo;
-    GLuint m_texture;
+    GLuint m_texture_name;
 };
