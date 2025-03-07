@@ -1,25 +1,19 @@
-/*
-01_fullcolor.frag : basic Fragment shader, it applies an uniform color to all the fragments. Color is passed as uniform from the main application
-
-N.B.)  "00_basic.vert" must be used as vertex shader
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2023/2024
-Master degree in Computer Science
-Universita' degli Studi di Milano
-
-*/
-
 #version 410 core
 
-// output shader variable
+in vec2 interp_UV;
+
 out vec4 colorFrag;
 
-// color to assign to the fragments: it is passed from the application
 uniform vec3 colorIn;
+uniform sampler2D tex;
+uniform float textured;
+
+vec3 color()
+{
+  return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV), textured));
+}
 
 void main()
 {
-    colorFrag = vec4(colorIn, 1.0f);
+    colorFrag = vec4(color(), 1.0f);
 }

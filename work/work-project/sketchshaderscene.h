@@ -48,7 +48,6 @@ public:
 
         delete illum_shader;
         delete color_shader;
-        delete depth_shader;
         delete normal_shader;
         delete spheremap_shader;
         delete screen_shader;
@@ -58,15 +57,11 @@ public:
     {
         illum_shader = new Shader(
             (SHADER_PATH + "illumination_model.vert").c_str(),
-            (SHADER_PATH + "sketch_shaders/lambert.frag").c_str()
+            (SHADER_PATH + "sketch_shaders/lambert-depth.frag").c_str()
         );
         color_shader = new Shader(
             (SHADER_PATH + "basic.vert").c_str(),
             (SHADER_PATH + "fullcolor.frag").c_str()
-        );
-        depth_shader = new Shader(
-            (SHADER_PATH + "basic.vert").c_str(),
-            (SHADER_PATH + "depth.frag").c_str()
         );
         normal_shader = new Shader(
             (SHADER_PATH + "illumination_model.vert").c_str(),
@@ -176,11 +171,11 @@ public:
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
         
         // DEPTH FBO
-        glGenFramebuffers(1, &depth_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        glGenFramebuffers(1, &lambert_depth_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, lambert_depth_fbo);
 
-        glGenTextures(1, &depth_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
+        glGenTextures(1, &lambert_depth_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo_texture);
         
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
@@ -188,7 +183,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depth_fbo_texture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lambert_depth_fbo_texture, 0);
         
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
         
@@ -210,11 +205,11 @@ public:
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         // SCREEN FBO
-        glGenFramebuffers(1, &screen_fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
+        glGenFramebuffers(1, &color_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
 
-        glGenTextures(1, &screen_fbo_texture);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
+        glGenTextures(1, &color_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
         
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
@@ -222,7 +217,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_fbo_texture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_fbo_texture, 0);
 
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -249,12 +244,13 @@ public:
         draw_objects(view, projection, normal_shader);
         
         // RENDER ON DEPTH FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, depth_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, lambert_depth_fbo);
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        draw_objects(view, projection, depth_shader);
+        draw_objects(view, projection);
         
-        // RENDER ON spherEMAP FBO
+        // RENDER ON SPHEREMAP FBO
         glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -269,19 +265,19 @@ public:
         );
         spheremap_shader->SetFloat("viewAngleY", glm::asin(camera->Front.y) / PI);
         spheremap_shader->SetFloat("hatching_repeat", hatchingRepeat);
+        
         spheremapObject->draw(spheremapViewMatrix, projection);
         
         glDepthFunc(GL_LESS);
         
         // RENDER ON SCREEN FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        draw_objects(view, projection);
+        draw_objects(view, projection, color_shader);
         
-        // RENDER ON DEFAULT FBO
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, screen_fbo);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, color_fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
@@ -299,10 +295,9 @@ public:
         screen_shader->Use();
         
         screen_shader->SetInt("normalTexture", 0);
-        screen_shader->SetInt("depthTexture", 1);
-        screen_shader->SetInt("screenTexture", 2);
+        screen_shader->SetInt("lambertdepthTexture", 1);
+        screen_shader->SetInt("colorTexture", 2);
         screen_shader->SetInt("hatchTexture", 3);
-        screen_shader->SetInt("paperTexture", 4);
         
         screen_shader->SetVec3("background_color", 1, glm::value_ptr(backgroundColor));
         screen_shader->SetVec3("edge_color", 1, glm::value_ptr(edgeColor));
@@ -316,9 +311,9 @@ public:
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depth_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, lambert_depth_fbo_texture);
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
         
@@ -333,13 +328,12 @@ public:
     {
         glDeleteRenderbuffers(1, &rbo);
         glDeleteFramebuffers(1, &normal_fbo);
-        glDeleteFramebuffers(1, &depth_fbo);
+        glDeleteFramebuffers(1, &lambert_depth_fbo);
         glDeleteFramebuffers(1, &spheremap_fbo);
-        glDeleteFramebuffers(1, &screen_fbo);
+        glDeleteFramebuffers(1, &color_fbo);
 
         illum_shader->Delete();
         color_shader->Delete();
-        depth_shader->Delete();
         normal_shader->Delete();
         spheremap_shader->Delete();
         screen_shader->Delete();
@@ -398,7 +392,6 @@ private:
 
     Shader* illum_shader;
     Shader* color_shader;
-    Shader* depth_shader;
     Shader* normal_shader;
     Shader* spheremap_shader;
     Shader* screen_shader;
@@ -409,12 +402,12 @@ private:
     GLuint rbo;
     GLuint normal_fbo;
     GLuint normal_fbo_texture;
-    GLuint depth_fbo;
-    GLuint depth_fbo_texture;
+    GLuint lambert_depth_fbo;
+    GLuint lambert_depth_fbo_texture;
     GLuint spheremap_fbo;
     GLuint spheremap_fbo_texture;
-    GLuint screen_fbo;
-    GLuint screen_fbo_texture;
+    GLuint color_fbo;
+    GLuint color_fbo_texture;
 
     void setup_illum_shader(Shader* illum_shader)
     {

@@ -6,8 +6,8 @@ in vec3 lightDir;
 out vec4 colorFrag;
 
 uniform sampler2D normalTexture;
-uniform sampler2D depthTexture;
-uniform sampler2D screenTexture;
+uniform sampler2D lambertdepthTexture;
+uniform sampler2D colorTexture;
 uniform sampler2D hatchTexture;
 
 uniform vec3 background_color = vec3(1.0);
@@ -94,8 +94,9 @@ vec3 hatch(float noise)
 {
     vec2 noise_uv = interp_UV - noise * noise_strength_color;
     vec3 hatchColor = texture(hatchTexture, interp_UV).rgb;
-    vec3 color_sample_hsb = rgb2hsb(texture(screenTexture, noise_uv).rgb);
-    float lambertian = color_sample_hsb.z;
+    vec3 color_sample_hsb = rgb2hsb(texture(colorTexture, noise_uv).rgb);
+    float lambertian = texture(lambertdepthTexture, noise_uv).r;
+    lambertian = clamp(lambertian * 0.3 + color_sample_hsb.z * 0.7, 0.05, lambertian);
     color_sample_hsb.y = color_saturation;
     color_sample_hsb.z = color_brightness;
     vec3 color_sample_rgb = hsb2rgb(color_sample_hsb);
@@ -103,8 +104,8 @@ vec3 hatch(float noise)
     return lambertian >= 0.9 ? background_color :
             (color_sample_rgb -
             hatchColor.rrr -
-            vec3(lambertian < 0.5 ? hatchColor.g : 0) -
-            vec3(lambertian < 0.25 ? hatchColor.b : 0));
+            step(lambertian, 0.5) * hatchColor.ggg -
+            step(lambertian, 0.25) * hatchColor.bbb);
 }
 
 void main()
@@ -135,7 +136,7 @@ void main()
     for(int i = 0; i < 9; i++)
     {
         vec3 sampleTex_normal = texture(normalTexture, uv + offsets[i]).rgb;
-        vec3 sampleTex_depth = texture(depthTexture, uv + offsets[i]).rgb;
+        vec3 sampleTex_depth = texture(lambertdepthTexture, uv + offsets[i]).ggg;
         col += sampleTex_normal * kernel[i] + sampleTex_depth * kernel[i];
     }
     
