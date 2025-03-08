@@ -6,10 +6,7 @@ in vec3 lightDir;
 
 out vec4 colorFrag;
 
-uniform sampler2D normalTexture;
-uniform sampler2D colorTexture;
 uniform sampler2D screenTexture;
-uniform sampler2D mapTexture;
 
 uniform vec2 screen_size = vec2(1920, 1080);
 

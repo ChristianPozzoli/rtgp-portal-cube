@@ -28,6 +28,7 @@
 #include "sketchshaderscene.h"
 #include "celshadingshaderscene.h"
 #include "paintingshaderscene.h"
+#include "dithershaderscene.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -196,29 +197,26 @@ int main()
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(groundColor);
 
-    ShaderScene mainScene("MainScene");
+    ShaderScene mainScene("Main");
     mainScene.add_external_object(&floorObject);
     mainScene.add_external_object(&sphereObject);
 
     currentScene = &mainScene;
     
-    SketchShaderScene sketchScene("Sketch Scene", window, width, height);
+    SketchShaderScene sketchScene("Sketch", window, width, height);
     sketchScene.setup_scene();
     
-    CelShadingShaderScene celShadingScene("CelShading Scene", window, width, height);
+    CelShadingShaderScene celShadingScene("CelShading", window, width, height);
     celShadingScene.setup_scene();
     
-    ModelObject bunnyObject2("Bunny_2", "../../models/bunny_lp.obj", illum_shader, bunnyPosition, bunnyScale / 2);
-    bunnyObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+    PaintingShaderScene paintingScene("Painting", window, width, height);
+    paintingScene.setup_scene();
+    
+    DitherShaderScene ditherScene("Dither", window, width, height);
+    ditherScene.setup_scene();
     
     ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
     cubeStructure.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    
-    PaintingShaderScene paintingScene("Painting Scene", window, width, height);
-    paintingScene.setup_scene();
-    
-    ShaderScene backScene("BackScene");
-    backScene.add_external_object(&bunnyObject2);
 
     PlaneObject frontPlaneObject("Plane front", color_shader, glm::vec3(0.0f, 0.0f, planeOffset()), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
     frontPlaneObject.setColor(leftFrontBorderColor);
@@ -240,7 +238,7 @@ int main()
     planeCubeMap[&frontPlaneObject] = &sketchScene;
     planeCubeMap[&rightPlaneObject] = &celShadingScene;
     planeCubeMap[&leftPlaneObject] = &paintingScene;
-    planeCubeMap[&backPlaneObject] = &backScene;
+    planeCubeMap[&backPlaneObject] = &ditherScene;
 
     glm::mat4 view = glm::mat4(1.0f);
 

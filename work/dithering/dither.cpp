@@ -27,6 +27,7 @@
 // classes developed during lab lectures to manage shaders and to load models
 #include <utils/shader.h>
 #include <utils/texture.h>
+#include <utils/framebuffer.h>
 #include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
@@ -103,6 +104,8 @@ GLint ditherFactor = 2;
 
 void setup_illum_shader(Shader&);
 
+const string SHADER_PATH = "../../shaders/";
+
 /////////////////// MAIN function ///////////////////////
 int main()
 {
@@ -156,33 +159,24 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
 
-    // we create the Shader Program used for objects (which presents different subroutines we can switch)
-    Shader illum_shader = Shader("illumination_model.vert", "illumination_model.frag");
-    Shader color_shader = Shader("basic.vert", "fullcolor.frag");
-    Shader wireframe_shader = Shader("basic.vert", "wireframe.frag");
-    Shader depth_shader = Shader("basic.vert", "depth.frag");
-    Shader normal_shader = Shader("illumination_model.vert", "normal.frag");
-    Shader spheremap_shader = Shader("spheremap.vert", "spheremap.frag");
-    Shader screen_shader = Shader("screen.vert", "screen.frag");
+    Shader illum_shader = Shader(
+        (SHADER_PATH + "illumination_model.vert").c_str(),
+        (SHADER_PATH + "dithering/illumination_model.frag").c_str()
+    );
+    Shader screen_shader = Shader(
+        (SHADER_PATH + "screen.vert").c_str(),
+        (SHADER_PATH + "dithering/dither.frag").c_str()
+    );
 
-    Texture hatch_texture("../../textures/hatch_rgb.png");
-    hatch_texture.setWrapS(GL_REPEAT);
-    hatch_texture.setWrapT(GL_REPEAT);
-
-    // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
     bunnyObject.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
     
-    // we load the model(s) (code of Model class is in include/utils/model.h)
     ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
     sphereObject.setColor(glm::vec3(1.0f, 1.0f, 0.0f));
     
     ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.1f, 0.3f, 1.0f));
     ModelObject cubeObject_2("Cube2", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
-    
-    ModelObject spheremapObject("CubeMap", "../../models/sphere.obj", spheremap_shader);
-    spheremapObject.setTexture(&hatch_texture);
 
     ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -206,80 +200,7 @@ int main()
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);  
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    // NORMAL FBO
-    unsigned int normal_fbo;
-    glGenFramebuffers(1, &normal_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
-
-    unsigned int normal_fbo_texture;
-    glGenTextures(1, &normal_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, normal_fbo_texture, 0);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-    
-    // DEPTH FBO
-    unsigned int color_fbo;
-    glGenFramebuffers(1, &color_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
-
-    unsigned int color_fbo_texture;
-    glGenTextures(1, &color_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_fbo_texture, 0);
-    
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-    
-    // SPHEREMAP FBO
-    unsigned int spheremap_fbo;
-    glGenFramebuffers(1, &spheremap_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
-
-    unsigned int spheremap_fbo_texture;
-    glGenTextures(1, &spheremap_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, spheremap_fbo_texture, 0);
-    
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-    // SCREEN FBO
-    unsigned int screen_fbo;
-    glGenFramebuffers(1, &screen_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
-
-    unsigned int screen_fbo_texture;
-    glGenTextures(1, &screen_fbo_texture);
-    glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_fbo_texture, 0);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        cout << "ERROR: Framebuffer is not complete" << endl;
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    FrameBuffer screen_fbo(width, height, rbo);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -376,58 +297,14 @@ int main()
         
         setup_illum_shader(illum_shader);
         
-        normal_shader.Use();
-        normal_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
-        
         glEnable(GL_DEPTH_TEST);
         
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        
-        // RENDER ON NORMAL FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        mainScene.draw(view, projection, &normal_shader);
-        
-        // RENDER ON COLOR FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, color_fbo);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        mainScene.draw(view, projection, &color_shader);
-        
-        // glBindFramebuffer(GL_FRAMEBUFFER, normal_fbo);
-        // glClear(GL_COLOR_BUFFER_BIT);
-        // glDepthFunc(GL_LEQUAL);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // glLineWidth(5.0f);
-        // mainScene.draw(view, projection, &wireframe_shader);
-        // glLineWidth(1.0f);
-        // glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-        // glDepthFunc(GL_LESS);
-        
-        // RENDER ON SPHEREMAP FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, spheremap_fbo);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        glDepthFunc(GL_LEQUAL);
-        glm::mat4 spheremapViewMatrix = glm::mat4(
-            camera.WorldFront.x, 0.0, - camera.WorldFront.z, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            camera.WorldFront.z, 0.0, camera.WorldFront.x, 0.0,
-            0.0, 0.0, 0.0, 1.0
-        );
-        spheremap_shader.SetFloat("viewAngleY", glm::asin(camera.Front.y));
-        spheremapObject.draw(spheremapViewMatrix, projection);
-        glDepthFunc(GL_LESS);
-        
         // RENDER ON SCREEN FBO
-        glBindFramebuffer(GL_FRAMEBUFFER, screen_fbo);
+        screen_fbo.bind();
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         mainScene.draw(view, projection);
-        
         
         // RENDER ON DEFAULT FBO
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -435,10 +312,7 @@ int main()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDisable(GL_DEPTH_TEST);
         
-        screen_shader.SetInt("normalTexture", 0);
-        screen_shader.SetInt("colorTexture", 1);
-        screen_shader.SetInt("screenTexture", 2);
-        screen_shader.SetInt("mapTexture", 3);
+        screen_shader.SetInt("screenTexture", 0);
         
         screen_shader.SetVec2("screen_size", 1, glm::value_ptr(glm::vec2(screenWidth, screenHeight)));
         screen_shader.SetFloat("color_factor", colorFactor);
@@ -446,13 +320,7 @@ int main()
         
         screen_shader.Use();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, normal_fbo_texture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, color_fbo_texture);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, screen_fbo_texture);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, spheremap_fbo_texture);
+        glBindTexture(GL_TEXTURE_2D, screen_fbo.texture_name());
 
         screen_quad.draw();
         
@@ -468,15 +336,9 @@ int main()
 	ImGui::DestroyContext();
 
     glDeleteRenderbuffers(1, &rbo);
-    glDeleteFramebuffers(1, &normal_fbo);
-    glDeleteFramebuffers(1, &color_fbo);
-    glDeleteFramebuffers(1, &spheremap_fbo);
-    glDeleteFramebuffers(1, &screen_fbo);
 
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
-    color_shader.Delete();
-    depth_shader.Delete();
     illum_shader.Delete();
     screen_shader.Delete();
 
