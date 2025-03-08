@@ -199,7 +199,7 @@ public:
         ImGui::SeparatorText("LUTs");
         if (ImGui::Combo("LUT", &lut_current_index, lut_items, IM_ARRAYSIZE(lut_items))) {
             if(lut_current_index >= 0) {
-                delete(lut_cel_shading_texture);
+                delete lut_cel_shading_texture;
                 lut_cel_shading_texture = 
                     new Texture(("../../textures/cel_shading_scene/" + string(lut_items[lut_current_index])).c_str(),
                                     GL_CLAMP_TO_EDGE,

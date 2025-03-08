@@ -6,17 +6,12 @@ in vec3 lightDir;
 
 out vec4 colorFrag;
 
-uniform sampler2D normalTexture;
-uniform sampler2D colorTexture;
 uniform sampler2D screenTexture;
-uniform sampler2D mapTexture;
-
-uniform vec2 screen_size = vec2(1920, 1080);
 
 uniform float offset_amount = 2500.0;
-const int samples = 9;
+uniform int samples_dimension = 3;
 
-vec4 compute_region(vec2 l, vec2 u) {
+vec4 compute_region(vec2 l, vec2 u, int samples) {
     vec3 sum = vec3(0.0);
     vec3 sq_sum = vec3(0.0);
     for(int i = int(l.x); i <= u.x; ++i) {
@@ -38,10 +33,12 @@ vec4 compute_region(vec2 l, vec2 u) {
 
 void main()
 {
-    vec4 reg_A = compute_region(vec2(-2, -2), vec2(0, 0));
-    vec4 reg_B = compute_region(vec2(0, -2), vec2(2, 0));
-    vec4 reg_C = compute_region(vec2(-2, 0), vec2(0, 2));
-    vec4 reg_D = compute_region(vec2(0, 0), vec2(2, 2));
+    int bound = samples_dimension - 1;
+    int samples = int(dot(samples_dimension, samples_dimension));
+    vec4 reg_A = compute_region(vec2(-bound, -bound), vec2(0, 0), samples);
+    vec4 reg_B = compute_region(vec2(0, -bound), vec2(bound, 0), samples);
+    vec4 reg_C = compute_region(vec2(-bound, 0), vec2(0, bound), samples);
+    vec4 reg_D = compute_region(vec2(0, 0), vec2(bound, bound), samples);
 
     vec3 color = reg_A.xyz;
     float minVar = reg_A.w;
