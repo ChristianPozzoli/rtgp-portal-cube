@@ -217,6 +217,7 @@ int main()
 
     // SCREEN FBO
     FrameBuffer* color_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+    FrameBuffer* blur_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
     FrameBuffer* mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
 
     GLuint previousTexture = 0;
@@ -276,6 +277,7 @@ int main()
                 if (ImGui::SliderFloat("Resolution fraction", &resolution_fraction, 1.0f, 50.0f))
                 {
                     delete color_fbo;
+                    delete blur_fbo;
                     delete mean_fbo;
 
                     width_fraction = width / resolution_fraction;
@@ -286,6 +288,7 @@ int main()
                     glBindRenderbuffer(GL_RENDERBUFFER, 0);
                     color_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
                     mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+                    blur_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
                 }
                 ImGui::SliderInt("Sample dimension", &samples_dimension, 0.0f, 10.0f);
                 ImGui::SliderFloat("Paint offset amount", &offset_amount_paint, 0.0f, 500.0f);
@@ -355,8 +358,9 @@ int main()
         mainScene.draw(view, projection);
         
         glDisable(GL_DEPTH_TEST);
-
+        
         // COLOR FBO
+        blur_fbo->bind();
         blur_shader->Use();
         blur_shader->SetInt("screenTexture", 0);
         blur_shader->SetFloat("offset_amount", offset_amount_blur);
@@ -372,7 +376,7 @@ int main()
         mean_shader->SetInt("screenTexture", 0);
         mean_shader->SetInt("previousScreenTexture", 1);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, color_fbo->texture_name());
+        glBindTexture(GL_TEXTURE_2D, blur_fbo->texture_name());
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, mean_fbo->texture_name());
         
