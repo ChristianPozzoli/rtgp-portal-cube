@@ -7,8 +7,6 @@ out vec4 colorFrag;
 uniform sampler2D screenTexture;
 uniform sampler2D previousScreenTexture;
 
-uniform float offset_amount = 2500.0;
-
 void main()
 {
     vec4 screenSample = texture(screenTexture, interp_UV);

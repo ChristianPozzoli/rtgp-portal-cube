@@ -161,36 +161,36 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410");
 
-    Shader illum_shader = Shader(
+    Shader* illum_shader = new Shader(
         (SHADER_PATH + "illumination_model.vert").c_str(),
         (SHADER_PATH + "painting/illumination_model.frag").c_str()
     );
-    Shader blur_shader = Shader(
+    Shader* blur_shader = new Shader(
         (SHADER_PATH + "screen.vert").c_str(),
         (SHADER_PATH + "painting/blur.frag").c_str()
     );
-    Shader mean_shader = Shader(
+    Shader* mean_shader = new Shader(
         (SHADER_PATH + "screen.vert").c_str(),
         (SHADER_PATH + "painting/mean.frag").c_str()
     );
-    Shader paint_shader = Shader(
+    Shader* paint_shader = new Shader(
         (SHADER_PATH + "screen.vert").c_str(),
         (SHADER_PATH + "painting/painting.frag").c_str()
     );
 
-    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
+    ModelObject bunnyObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
     Texture uvTexture("../../textures/UV_Grid_Sm.png");
     bunnyObject.setTexture(&uvTexture);
     bunnyObject.setColor(glm::vec3(1.0f, 0.0f, 0.0f));
     
-    ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
+    ModelObject sphereObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
     sphereObject.setColor(glm::vec3(1.0f, 1.0f, 0.0f));
     
-    ModelObject cubeObject("Cube", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
+    ModelObject cubeObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
     cubeObject.setColor(glm::vec3(0.1f, 0.3f, 1.0f));
-    ModelObject cubeObject_2("Cube2", "../../models/cube.obj", illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
+    ModelObject cubeObject_2("Cube2", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
 
-    ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
+    ModelObject floorObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
     floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
     floorObject.setColor(glm::vec3(0.0f, 0.5f, 0.0f));
 
@@ -340,7 +340,7 @@ int main()
             sphereObject.setRotation(rotation);
         }
         
-        setup_illum_shader(illum_shader);
+        setup_illum_shader(*illum_shader);
         
         glEnable(GL_DEPTH_TEST);
         
@@ -357,9 +357,9 @@ int main()
         glDisable(GL_DEPTH_TEST);
 
         // COLOR FBO
-        blur_shader.Use();
-        blur_shader.SetInt("screenTexture", 0);
-        blur_shader.SetFloat("offset_amount", offset_amount_blur);
+        blur_shader->Use();
+        blur_shader->SetInt("screenTexture", 0);
+        blur_shader->SetFloat("offset_amount", offset_amount_blur);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, color_fbo->texture_name());
         
@@ -367,10 +367,10 @@ int main()
         
         // COLOR FBO
         mean_fbo->bind();
-        mean_shader.Use();
+        mean_shader->Use();
         
-        mean_shader.SetInt("screenTexture", 0);
-        mean_shader.SetInt("previousScreenTexture", 1);
+        mean_shader->SetInt("screenTexture", 0);
+        mean_shader->SetInt("previousScreenTexture", 1);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, color_fbo->texture_name());
         glActiveTexture(GL_TEXTURE1);
@@ -382,11 +382,11 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
-        paint_shader.Use();
+        paint_shader->Use();
         
-        paint_shader.SetInt("screenTexture", 0);
-        paint_shader.SetFloat("offset_amount", offset_amount_paint);
-        paint_shader.SetInt("samples_dimension", samples_dimension);
+        paint_shader->SetInt("screenTexture", 0);
+        paint_shader->SetFloat("offset_amount", offset_amount_paint);
+        paint_shader->SetInt("samples_dimension", samples_dimension);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mean_fbo->texture_name());
         
@@ -406,6 +406,11 @@ int main()
     glDeleteRenderbuffers(1, &rbo);
     delete color_fbo;
     delete mean_fbo;
+
+    delete illum_shader;
+    delete blur_shader;
+    delete mean_shader;
+    delete paint_shader;
 
     // we close and delete the created context
     glfwTerminate();
