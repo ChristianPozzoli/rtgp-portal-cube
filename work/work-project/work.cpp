@@ -27,6 +27,7 @@
 #include <utils/shaderscene.h>
 #include "sketchshaderscene.h"
 #include "celshadingshaderscene.h"
+#include "paintingshaderscene.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -207,17 +208,14 @@ int main()
     CelShadingShaderScene celShadingScene("CelShading Scene", window, width, height);
     celShadingScene.setup_scene();
     
-    ModelObject cubeObject2("Cube_2", "../../models/cube.obj", illum_shader, cubePosition, cubeScale / 2);
-    cubeObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
-        
     ModelObject bunnyObject2("Bunny_2", "../../models/bunny_lp.obj", illum_shader, bunnyPosition, bunnyScale / 2);
     bunnyObject2.setColor(glm::vec3(0.0f, 0.0f, 1.0f));
     
     ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
     cubeStructure.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
     
-    ShaderScene leftScene("LeftScene");
-    leftScene.add_external_object(&cubeObject2);
+    PaintingShaderScene paintingScene("Painting Scene", window, width, height);
+    paintingScene.setup_scene();
     
     ShaderScene backScene("BackScene");
     backScene.add_external_object(&bunnyObject2);
@@ -241,7 +239,7 @@ int main()
 
     planeCubeMap[&frontPlaneObject] = &sketchScene;
     planeCubeMap[&rightPlaneObject] = &celShadingScene;
-    planeCubeMap[&leftPlaneObject] = &leftScene;
+    planeCubeMap[&leftPlaneObject] = &paintingScene;
     planeCubeMap[&backPlaneObject] = &backScene;
 
     glm::mat4 view = glm::mat4(1.0f);

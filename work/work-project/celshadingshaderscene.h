@@ -268,12 +268,7 @@ private:
     {
         cel_shading.Use();
 
-        GLint pointLightLocation = glGetUniformLocation(cel_shading.Program, "pointLightPosition");
-        GLint matSpecularLocation = glGetUniformLocation(cel_shading.Program, "specularColor");
-        GLint matAmbientLocation = glGetUniformLocation(cel_shading.Program, "ambientColor");
-        GLint thicknessLocation = glGetUniformLocation(cel_shading.Program, "thickness");
-        
-        glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
+        cel_shading.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
 
         cel_shading.SetFloat("offset_factor", cel_shading_texture_offset_factor);
         cel_shading.SetFloat("outline_threshold_lower", cel_shading_texture_outline_threshold_lower);

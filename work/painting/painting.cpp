@@ -220,19 +220,6 @@ int main()
     FrameBuffer* blur_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
     FrameBuffer* mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
 
-    GLuint previousTexture = 0;
-    glGenTextures(1, &previousTexture);
-    glBindTexture(GL_TEXTURE_2D, previousTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_fraction, height_fraction, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        cout << "ERROR: Framebuffer is not complete" << endl;
-    }
-
     while(!glfwWindowShouldClose(window))
     {
         GLfloat currentFrame = glfwGetTime();
@@ -409,6 +396,7 @@ int main()
 
     glDeleteRenderbuffers(1, &rbo);
     delete color_fbo;
+    delete blur_fbo;
     delete mean_fbo;
 
     delete illum_shader;
@@ -597,21 +585,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void setup_illum_shader(Shader& illum_shader)
 {
     illum_shader.Use();
-    GLint pointLightLocation = glGetUniformLocation(illum_shader.Program, "pointLightPosition");
-    GLint matSpecularLocation = glGetUniformLocation(illum_shader.Program, "specularColor");
-    GLint matAmbientLocation = glGetUniformLocation(illum_shader.Program, "ambientColor");
-    GLint kdLocation = glGetUniformLocation(illum_shader.Program, "Kd");
-    GLint ksLocation = glGetUniformLocation(illum_shader.Program, "Ks");
-    GLint kaLocation = glGetUniformLocation(illum_shader.Program, "Ka");
-    GLint shininessLocation = glGetUniformLocation(illum_shader.Program, "shininess");
-    GLint alphaLocation = glGetUniformLocation(illum_shader.Program, "alpha");
-    GLint f0Location = glGetUniformLocation(illum_shader.Program, "F0");
-    
-    glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-    glUniform1f(kdLocation, Kd);
-    glUniform1f(ksLocation, Ks);
-    glUniform1f(kaLocation, Ka);
-    glUniform1f(shininessLocation, shininess);
-    glUniform1f(alphaLocation, alpha);
-    glUniform1f(f0Location, F0);
+
+    illum_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
+
+    illum_shader.SetFloat("Kd", Kd);
+    illum_shader.SetFloat("Ks", Ks);
+    illum_shader.SetFloat("Ka", Ka);
+    illum_shader.SetFloat("shininess", shininess);
+    illum_shader.SetFloat("alpha", alpha);
+    illum_shader.SetFloat("F0", F0);
 }
