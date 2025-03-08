@@ -276,6 +276,7 @@ int main()
                 if (ImGui::SliderFloat("Resolution fraction", &resolution_fraction, 1.0f, 50.0f))
                 {
                     delete color_fbo;
+                    delete mean_fbo;
 
                     width_fraction = width / resolution_fraction;
                     height_fraction = height / resolution_fraction;
@@ -284,6 +285,7 @@ int main()
                     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_fraction, height_fraction);  
                     glBindRenderbuffer(GL_RENDERBUFFER, 0);
                     color_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+                    mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
                 }
                 ImGui::SliderInt("Sample dimension", &samples_dimension, 0.0f, 10.0f);
                 ImGui::SliderFloat("Paint offset amount", &offset_amount_paint, 0.0f, 500.0f);
@@ -403,6 +405,7 @@ int main()
 
     glDeleteRenderbuffers(1, &rbo);
     delete color_fbo;
+    delete mean_fbo;
 
     // we close and delete the created context
     glfwTerminate();
