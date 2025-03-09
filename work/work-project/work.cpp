@@ -39,7 +39,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
-#include <unordered_map>
+#include <map>
 
 static const string SHADER_PATH = "../../shaders/";
 
@@ -99,7 +99,7 @@ GLfloat cubeStructureScale = 2.0f;
 
 ShaderScene* currentScene = nullptr;
 
-unordered_map<PlaneObject*, ShaderScene*> planeCubeMap;
+map<PlaneObject*, ShaderScene*> planeCubeMap;
 
 void setup_illum_shader(Shader&);
 
@@ -510,23 +510,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
   if(key == GLFW_KEY_L && action == GLFW_PRESS)
       wireframe=!wireframe;
 
-    // pressing a key number, we change the shader applied to the models
-    // if the key is between 1 and 9, we proceed and check if the pressed key corresponds to
-    // a valid subroutine
-    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_9) && action == GLFW_PRESS)
+    if((key >= GLFW_KEY_1 && key <= GLFW_KEY_4) && action == GLFW_PRESS)
     {
-        // "1" to "9" -> ASCII codes from 49 to 59
-        // we subtract 48 (= ASCII CODE of "0") to have integers from 1 to 9
-        // we subtract 1 to have indices from 0 to 8
-        new_subroutine = (key-'0'-1);
-        // if the new index is valid ( = there is a subroutine with that index in the shaders vector),
-        // we change the value of the current_subroutine variable
-        // NB: we can just check if the new index is in the range between 0 and the size of the shaders vector,
-        // avoiding to use the std::find function on the vector
-        if (new_subroutine<subroutines.size())
-        {
-            current_subroutine = new_subroutine;
-            PrintCurrentShader(current_subroutine);
+        int index = key - GLFW_KEY_1;
+        int count = 0;
+        for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i) {
+            if(index == count++) {
+                ShaderScene* scene = (*i).second;
+                planeCubeMap[(*i).first] = currentScene;
+                currentScene = scene;
+            }
         }
     }
 
