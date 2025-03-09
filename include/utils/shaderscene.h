@@ -44,7 +44,6 @@ public:
     {
         m_width = width;
         m_height = height;
-        cout << "[" << m_name << "] New size: " << width << ", " << height << endl;
     }
 
     virtual void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
