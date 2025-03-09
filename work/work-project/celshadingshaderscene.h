@@ -88,15 +88,15 @@ public:
         wall_texture = new Texture("../../textures/cel_shading_scene/wall.jpg");
 
         ModelObject* wallObject_1 = new ModelObject("Wall_1", plane_model, *cel_shading, glm::vec3(5.0f, 0.0f, 5.0f), 1.5f, glm::vec3(90.0f, 0.0f, 0.0f));
-        wallObject_1->setTexture(wall_texture);
+        wallObject_1->setTexture(wall_texture, 3.5f);
         ModelObject* wallObject_2 = new ModelObject("Wall_2", plane_model, *cel_shading, glm::vec3(5.0f, 0.0f, 15.0f), 1.5f, glm::vec3(90.0f, 0.0f, 180.0f));
-        wallObject_2->setTexture(wall_texture);
+        wallObject_2->setTexture(wall_texture, 3.5f);
         ModelObject* wallObject_3 = new ModelObject("Wall_3", plane_model, *cel_shading, glm::vec3(0.0f, 0.0f, 10.0f), 1.5f, glm::vec3(90.0f, 0.0f, -90.0f));
-        wallObject_3->setTexture(wall_texture);
+        wallObject_3->setTexture(wall_texture, 3.5f);
         ModelObject* wallObject_4 = new ModelObject("Wall_4", plane_model, *cel_shading, glm::vec3(10.0f, 0.0f, 10.0f), 1.5f, glm::vec3(90.0f, 0.0f, 90.0f));
-        wallObject_4->setTexture(wall_texture);
+        wallObject_4->setTexture(wall_texture, 3.5f);
         ModelObject* wallObject_5 = new ModelObject("Wall_5", plane_model, *cel_shading, glm::vec3(5.0f, 2.5f, 10.0f), 1.5f, glm::vec3(180.0f, 0.0f, 0.0f));
-        wallObject_5->setTexture(wall_texture);
+        wallObject_5->setTexture(wall_texture, 3.0f);
 
         // we load the model(s) (code of Model class is in include/utils/model.h)
         ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *cel_shading, glm::vec3(8.0f, -0.85f, 7.0f), 0.05f);
