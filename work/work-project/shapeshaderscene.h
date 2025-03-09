@@ -36,13 +36,13 @@
 
 using namespace std;
 
-class DitherShaderScene : public ShaderScene
+class ShapeShaderScene : public ShaderScene
 {
 public:
-    DitherShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
+    ShapeShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
     {}
 
-    ~DitherShaderScene()
+    ~ShapeShaderScene()
     {
         delete illum_shader;
         delete screen_shader;
@@ -57,32 +57,22 @@ public:
     {
         illum_shader = new Shader(
             (SHADER_PATH + "illumination_model.vert").c_str(),
-            (SHADER_PATH + "dithering/illumination_model.frag").c_str()
+            (SHADER_PATH + "illumination_model.frag").c_str()
         );
         screen_shader = new Shader(
             (SHADER_PATH + "screen.vert").c_str(),
-            (SHADER_PATH + "dithering/dither.frag").c_str()
+            (SHADER_PATH + "screen.frag").c_str()
         );
     
-        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-        bunnyObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
-        
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
-        sphereObject->setColor(glm::vec3(1.0f, 1.0f, 0.0f));
-        
-        ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
-        cubeObject->setColor(glm::vec3(0.1f, 0.3f, 1.0f));
-        ModelObject* cubeObject_2 = new ModelObject("Cube2", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
+        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -10.0f), 1.5f);
+        sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0));
     
         ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
         floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
         floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
-    
-        add_internal_object(floorObject);
-        add_internal_object(bunnyObject);
-        add_internal_object(cubeObject);
-        add_internal_object(cubeObject_2);
+
         add_internal_object(sphereObject);
+        add_internal_object(floorObject);
 
         // RBO
         glGenRenderbuffers(1, &rbo);
@@ -103,7 +93,7 @@ public:
         
         // RENDER ON SCREEN FBO
         screen_fbo->bind();
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection);
@@ -126,13 +116,9 @@ public:
     {
         glDisable(GL_DEPTH_TEST);
         
+        screen_shader->Use();
         screen_shader->SetInt("screenTexture", 0);
         
-        screen_shader->SetVec2("screen_size", 1, glm::value_ptr(glm::vec2(width, height)));
-        screen_shader->SetFloat("color_factor", colorFactor);
-        screen_shader->SetFloat("dither_factor", ditherFactor);
-        
-        screen_shader->Use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, screen_fbo->texture_name());
 
@@ -147,9 +133,16 @@ public:
         {
             return;
         }
-        
-        ImGui::SliderInt("Color Factor", &colorFactor, 0.0f, 10.0f);
-        ImGui::SliderInt("Dither Factor", &ditherFactor, 1.0f, 24.0f);
+
+        ImGui::DragFloat3("Light Position", (float*)&lightPos0);
+        ImGui::SliderFloat("Kd", (float*)&Kd, 0.0f, 2.0f);
+        ImGui::SliderFloat("Ks", (float*)&Ks, 0.0f, 2.0f);
+        ImGui::SliderFloat("Ka", (float*)&Ka, 0.0f, 5.0f);
+        ImGui::SliderFloat("Shininess", (float*)&shininess, 0.0f, 100.0f);
+        ImGui::SliderFloat("Alpha", (float*)&alpha, 0.0f, 5.0f);
+        ImGui::SliderFloat("F0", (float*)&F0, 0.0f, 100.0f);
+        ImGui::ColorEdit3("Specular color", (float*)&specularColor);
+        ImGui::ColorEdit3("Ambient color", (float*)&ambientColor);
 
         ShaderScene::drawImGui();
     }
@@ -168,10 +161,9 @@ private:
 
     GLuint rbo;
 
-    GLint colorFactor = 8;
-    GLint ditherFactor = 2;
-
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
+    glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
     GLfloat Kd = 0.5f;
     GLfloat Ks = 0.4f;
     GLfloat Ka = 0.1f;
@@ -184,6 +176,8 @@ private:
         illum_shader.Use();
 
         illum_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
+        illum_shader.SetVec3("specularColor", 1, glm::value_ptr(specularColor));
+        illum_shader.SetVec3("ambientColor", 1, glm::value_ptr(ambientColor));
 
         illum_shader.SetFloat("Kd", Kd);
         illum_shader.SetFloat("Ks", Ks);

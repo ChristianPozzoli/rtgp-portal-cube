@@ -25,6 +25,7 @@
 #include <utils/planeobject.h>
 #include <utils/scene.h>
 #include <utils/shaderscene.h>
+#include "shapeshaderscene.h"
 #include "sketchshaderscene.h"
 #include "celshadingshaderscene.h"
 #include "paintingshaderscene.h"
@@ -75,16 +76,8 @@ GLboolean wireframe = GL_FALSE;
 Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
 
 glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
-
-glm::vec3 diffuseColor(1.0f, 0.0f, 0.0f);
-glm::vec3 specularColor(1.0f, 1.0f, 1.0f);
-glm::vec3 ambientColor(0.1f, 0.1f, 0.1f);
-
-glm::vec3 leftFrontBorderColor(0.0f, 1.0f, 0.0f);
-glm::vec3 rightFrontBorderColor(1.0f, 0.0f, 0.0f);
-glm::vec3 leftBackBorderColor(1.0f, 1.0f, 0.0f);
-glm::vec3 rightBackBorderColor(1.0f, 0.0f, 1.0f);
-
+glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
 GLfloat Kd = 0.5f;
 GLfloat Ks = 0.4f;
 GLfloat Ka = 0.1f;
@@ -92,29 +85,17 @@ GLfloat shininess = 25.0f;
 GLfloat alpha = 0.2f;
 GLfloat F0 = 0.9f;
 
-GLfloat celShadingThickness = .3f;
-
-glm::vec3 groundColor(0.0f, 0.5f, 0.0f);
+glm::vec3 leftFrontBorderColor(0.0f, 1.0f, 0.0f);
+glm::vec3 rightFrontBorderColor(1.0f, 0.0f, 0.0f);
+glm::vec3 leftBackBorderColor(1.0f, 1.0f, 0.0f);
+glm::vec3 rightBackBorderColor(1.0f, 0.0f, 1.0f);
 
 GLfloat planeScale = 0.95f;
 GLfloat planeBorder = 0.0f;
 
-glm::vec3 bunnyPosition(0.0f, 1.0f, -5.0f);
-GLfloat bunnyScale = 0.5f;
-
 glm::vec3 cubeStructurePosition(0.0f, 0.5f, 0.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
 GLfloat cubeStructureScale = 2.5f;
-
-glm::vec3 mainScenePosition(0.0f, 0.0f, 0.0f);
-glm::vec3 mainSceneRotation(0.0f, 0.0f, 0.0f);
-GLfloat mainSceneScale = 1.0f;
-
-glm::vec3 spherePosition(0.0f, 1.0f, -10.0f);
-GLfloat sphereScale = 1.5f;
-
-glm::vec3 cubePosition(0.0f, 1.0f, -5.0f);
-GLfloat cubeScale = 1.5f;
 
 ShaderScene* currentScene = nullptr;
 
@@ -181,27 +162,14 @@ int main()
         (SHADER_PATH + "basic.vert").c_str(),
         (SHADER_PATH + "fullcolor.frag").c_str()
     );
-    Shader depth_shader = Shader(
-        (SHADER_PATH + "basic.vert").c_str(),
-        (SHADER_PATH + "depth.frag").c_str()
-    );
 
     SetupShader(illum_shader.Program);
     PrintCurrentShader(current_subroutine);
 
+    ShapeShaderScene shapeScene("Shape", window, width, height);
+    shapeScene.setup_scene();
 
-    ModelObject sphereObject("Sphere", "../../models/sphere.obj", illum_shader, spherePosition, sphereScale);
-    sphereObject.setColor(diffuseColor);
-
-    ModelObject floorObject("Floor", "../../models/plane.obj", illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
-    floorObject.setScale(glm::vec3(10.0f, 1.0f, 10.0f));
-    floorObject.setColor(groundColor);
-
-    ShaderScene mainScene("Main");
-    mainScene.add_external_object(&floorObject);
-    mainScene.add_external_object(&sphereObject);
-
-    currentScene = &mainScene;
+    currentScene = &shapeScene;
     
     SketchShaderScene sketchScene("Sketch", window, width, height);
     sketchScene.setup_scene();
@@ -252,15 +220,12 @@ int main()
         glfwPollEvents();
 		
 		//ImGUI new frame
-		{
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        }
 
         // ImGUI window
         {
-            static float f = 0.0f;
 			GLfloat fieldOfViewX = glm::degrees(glm::atan(glm::tan(glm::radians(fieldOfViewY)/2) * screenWidth / screenHeight) * 2);
 
             ImGui::Begin("Parameters");
@@ -327,23 +292,6 @@ int main()
             ImGui::Separator();
             ImGui::NewLine();
 
-			if(ImGui::CollapsingHeader("Illumination Model Configuration"))
-			{
-				ImGui::DragFloat3("Light Position", (float*)&lightPos0);
-			    ImGui::SeparatorText("Cel shading parameters");
-				ImGui::SliderFloat("Thickness", (float*)&celShadingThickness, 0.0f, 1.0f);
-                ImGui::SeparatorText("Illumination model parameters");
-				ImGui::Text("Illumination Model = %s", subroutines[current_subroutine]);
-				ImGui::SliderFloat("Kd", (float*)&Kd, 0.0f, 2.0f);
-				ImGui::SliderFloat("Ks", (float*)&Ks, 0.0f, 2.0f);
-				ImGui::SliderFloat("Ka", (float*)&Ka, 0.0f, 5.0f);
-				ImGui::SliderFloat("Shininess", (float*)&shininess, 0.0f, 100.0f);
-				ImGui::SliderFloat("Alpha", (float*)&alpha, 0.0f, 5.0f);
-				ImGui::SliderFloat("F0", (float*)&F0, 0.0f, 100.0f);
-				ImGui::ColorEdit3("Specular color", (float*)&specularColor);
-				ImGui::ColorEdit3("Ambient color", (float*)&ambientColor);
-			}
-
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
@@ -399,7 +347,7 @@ int main()
         currentScene->draw(view, projection);
 
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-        
+        setup_illum_shader(illum_shader);
         cubeStructure.draw(view, projection);
         
 		/////////////////// STENCIL ///////////////////////////////////////////
@@ -443,8 +391,6 @@ int main()
         glStencilMask(0x00); // Disable stencil drawing
         glDepthMask(0xFF);
 		
-        setup_illum_shader(illum_shader);
-        
         for (uint8_t i = 0; i < visiblePlanesSize; ++i)
         {
             PlaneObject* plane = visiblePlanes[i];
@@ -700,27 +646,18 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void setup_illum_shader(Shader& illum_shader)
 {
-    illum_shader.Use(subroutines[current_subroutine]);
+    illum_shader.Use();
 
-    GLint pointLightLocation = glGetUniformLocation(illum_shader.Program, "pointLightPosition");
-    GLint matSpecularLocation = glGetUniformLocation(illum_shader.Program, "specularColor");
-    GLint matAmbientLocation = glGetUniformLocation(illum_shader.Program, "ambientColor");
-    GLint kdLocation = glGetUniformLocation(illum_shader.Program, "Kd");
-    GLint ksLocation = glGetUniformLocation(illum_shader.Program, "Ks");
-    GLint kaLocation = glGetUniformLocation(illum_shader.Program, "Ka");
-    GLint shininessLocation = glGetUniformLocation(illum_shader.Program, "shininess");
-    GLint alphaLocation = glGetUniformLocation(illum_shader.Program, "alpha");
-    GLint f0Location = glGetUniformLocation(illum_shader.Program, "F0");
-    
-    glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos0));
-    glUniform3fv(matAmbientLocation, 1, glm::value_ptr(ambientColor));
-    glUniform3fv(matSpecularLocation, 1, glm::value_ptr(specularColor));
-    glUniform1f(kdLocation, Kd);
-    glUniform1f(ksLocation, Ks);
-    glUniform1f(kaLocation, Ka);
-    glUniform1f(shininessLocation, shininess);
-    glUniform1f(alphaLocation, alpha);
-    glUniform1f(f0Location, F0);
+    illum_shader.SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
+    illum_shader.SetVec3("specularColor", 1, glm::value_ptr(specularColor));
+    illum_shader.SetVec3("ambientColor", 1, glm::value_ptr(ambientColor));
+
+    illum_shader.SetFloat("Kd", Kd);
+    illum_shader.SetFloat("Ks", Ks);
+    illum_shader.SetFloat("Ka", Ka);
+    illum_shader.SetFloat("shininess", shininess);
+    illum_shader.SetFloat("alpha", alpha);
+    illum_shader.SetFloat("F0", F0);
 }
 
 glm::mat4 ModifyProjectionMatrix(const glm::mat4& projection, const glm::vec4& clipPlane)

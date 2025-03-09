@@ -77,8 +77,6 @@ public:
         );
 
         ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-        Texture uvTexture("../../textures/UV_Grid_Sm.png");
-        bunnyObject->setTexture(&uvTexture);
         bunnyObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
         
         ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
