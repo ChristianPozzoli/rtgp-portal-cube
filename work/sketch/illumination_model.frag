@@ -47,6 +47,7 @@ uniform float F0;
 uniform float timer;
 
 uniform sampler2D tex;
+uniform float tex_repetition = 1;
 uniform float textured;
 
 subroutine vec3 ill_model();
@@ -56,7 +57,7 @@ subroutine uniform ill_model Illumination_Model;
 
 vec3 color()
 {
-  return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV), textured));
+  return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV * tex_repetition), textured));
 }
 
 //////////////////////////////////////////

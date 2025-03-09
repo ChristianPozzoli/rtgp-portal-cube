@@ -73,7 +73,7 @@ GLfloat float_amount = 0.08f;
 GLboolean spinning = GL_FALSE;
 GLboolean wireframe = GL_FALSE;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 7.0f), GL_TRUE);
+Camera camera(glm::vec3(5.0f, 0.0f, 15.0f), GL_TRUE);
 
 glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -93,9 +93,9 @@ glm::vec3 rightBackBorderColor(1.0f, 0.0f, 1.0f);
 GLfloat planeScale = 0.95f;
 GLfloat planeBorder = 0.0f;
 
-glm::vec3 cubeStructurePosition(0.0f, 0.5f, 0.0f);
+glm::vec3 cubeStructurePosition(5.0f, 0.25f, 10.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
-GLfloat cubeStructureScale = 2.5f;
+GLfloat cubeStructureScale = 2.0f;
 
 ShaderScene* currentScene = nullptr;
 

@@ -15,6 +15,7 @@ uniform vec3 colorIn;
 uniform vec3 specularColor;
 
 uniform sampler2D tex;
+uniform float tex_repetition = 1;
 uniform float textured;
 
 uniform float thickness;
@@ -23,7 +24,7 @@ uniform float timer;
 
 vec3 color()
 {
-  return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV), textured));
+  return colorIn * vec3(mix(vec4(1.0), texture(tex, interp_UV * tex_repetition), textured));
 }
 
 vec3 CelShading() // this name is the one which is detected by the SetupShaders() function in the main application, and the one used to swap subroutines

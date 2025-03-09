@@ -173,32 +173,24 @@ class SceneObject
             dirty = true;
         }
 
-        void drawImGui() {
-            ImGui::SeparatorText(m_name.c_str());
-			if (ImGui::DragFloat3((m_name + " position").c_str(), (float*)&imgui_position)) { this->setPosition(imgui_position); }
-			if (ImGui::DragFloat3((m_name + " rotation").c_str(), (float*)&imgui_rotation)) { this->setRotation(imgui_rotation); }
-            if (ImGui::InputFloat((m_name + " scale").c_str(), (float*)&imgui_scale_f)) { this->setScale(imgui_scale_f); }
-            if (ImGui::ColorEdit3((m_name + " color").c_str(), (float*)&imgui_color)) { this->setColor(imgui_color); }
-        }
-
     protected:
         vector<SceneObject*>* children;
         SceneObject* parent;
 
-    private:
-        glm::mat4 m_modelMatrix;
-
+        std::string m_name;
         glm::vec3 imgui_position;
         //glm::vec3 imgui_scale_v;
         GLfloat imgui_scale_f;
         glm::vec3 imgui_rotation;
         glm::vec4 imgui_color;
 
+    private:
+        glm::mat4 m_modelMatrix;
+
         glm::vec3 m_position;
         glm::vec3 m_scale;
         glm::vec3 m_rotation;
         glm::vec4 m_color;
-        std::string m_name;
         
         bool dirty = true;
         glm::mat4 m_cached_composedModelMatrix;

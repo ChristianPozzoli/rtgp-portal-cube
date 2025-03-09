@@ -18,14 +18,20 @@ class ModelObject : public DrawableSceneObject
 {
 public:
     ModelObject(std::string name, std::string modelPath, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
-        DrawableSceneObject(name, shader, position, scale, rotation)
+        DrawableSceneObject(name, shader, position, scale, rotation), external(false)
     {
         m_model = new Model(modelPath);
     }
 
+    ModelObject(std::string name, Model* model, Shader& shader, glm::vec3 position = glm::vec3(0.0f), GLfloat scale = 1.0f, glm::vec3 rotation = glm::vec3(0.0f)) :
+        DrawableSceneObject(name, shader, position, scale, rotation), m_model(model), external(true)
+    {}
+
     ~ModelObject()
     {
-        delete m_model;
+        if(!external) {
+            delete m_model;
+        }
     }
 
     Model& model() {
@@ -34,6 +40,7 @@ public:
 
 private:
     Model* m_model;
+    bool external = false;
 
     void drawObject()
     {

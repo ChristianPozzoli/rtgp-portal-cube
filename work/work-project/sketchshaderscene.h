@@ -45,6 +45,8 @@ public:
         delete screen_quad;
         delete spheremapObject;
 
+        delete hatch_texture;
+
         delete normal_fbo;
         delete lambert_depth_fbo;
         delete spheremap_fbo;
@@ -83,7 +85,7 @@ public:
             (SHADER_PATH + "sketch_shaders/screen.frag").c_str()
         );
 
-        Texture* hatch_texture = new Texture("../../textures/hatch_rgb.png");
+        hatch_texture = new Texture("../../textures/hatch_rgb.png");
         hatch_texture->setWrapS(GL_REPEAT);
         hatch_texture->setWrapT(GL_REPEAT);
         
@@ -113,16 +115,14 @@ public:
         treeObject->addChild(leavesObject);
         
         ModelObject* oldTreeObject = new ModelObject("Old tree", "../../models/sketch_scene/old_tree.fbx", *lambert_depth_shader);
-        Texture* oldTreeTexture = new Texture("../../textures/sketch_scene/old_tree.png");
-        oldTreeObject->setTexture(oldTreeTexture);
+        oldTreeObject->setTexture("../../textures/sketch_scene/old_tree.png");
         oldTreeObject->setPosition(glm::vec3(-2.0f, - 0.6f, 16.0f));
         oldTreeObject->setRotation(glm::vec3(180.0f, 220.0f, 0.0f));
         oldTreeObject->setScale(0.75f);
         oldTreeObject->setColor(glm::vec3(1.0f, 0.559f, 0.0f));
         
         ModelObject* benchObject = new ModelObject("Bench", "../../models/sketch_scene/bench.fbx", *lambert_depth_shader);
-        Texture* benchTexture = new Texture("../../textures/sketch_scene/bench.png");
-        benchObject->setTexture(benchTexture);
+        benchObject->setTexture("../../textures/sketch_scene/bench.png");
         benchObject->setPosition(glm::vec3(2.0f, - 1.0f, -2.0f));
         benchObject->setRotation(glm::vec3(0.0f, 120.0f, 0.0f));
         
@@ -321,6 +321,8 @@ private:
     float noiseFrequencyEdge = 40.0f;
     float noiseStrengthEdge = 0.00175f;
     float noiseStrengthColor = 0.0025f;
+
+    Texture* hatch_texture;
 
     Shader* lambert_depth_shader;
     Shader* color_shader;

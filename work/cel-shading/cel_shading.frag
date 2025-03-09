@@ -15,6 +15,7 @@ uniform vec3 colorIn;
 uniform vec3 specularColor;
 
 uniform sampler2D tex;
+uniform float tex_repetition = 1;
 uniform sampler2D LUT;
 uniform float textured;
 
@@ -90,13 +91,13 @@ vec3 textureKernel() {
 
     
     vec3 sampleTex[9];
-    vec3 sampledTextureCenter = texture(tex, interp_UV).rgb;
+    vec3 sampledTextureCenter = texture(tex, interp_UV * tex_repetition).rgb;
     if (poster_factor_final != 1) {
         sampledTextureCenter = round(sampledTextureCenter * poster_factor_final) / poster_factor_final;
     }
     for(int i = 0; i < 9; i++)
     {
-        sampleTex[i] = texture(tex, interp_UV + offsets[i]).rgb;
+        sampleTex[i] = texture(tex, interp_UV * tex_repetition + offsets[i]).rgb;
         if (poster_factor_sobel != 1) {
             sampleTex[i] = round(sampleTex[i] * poster_factor_sobel) / poster_factor_sobel;
         }

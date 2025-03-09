@@ -61,14 +61,35 @@ class DrawableSceneObject : public DrawableObject, public SceneObject
             {
                 glUniform1f(texturedLocation, textured);
             }
-
+            
             if(textured)
             {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, tex->name());
+                GLint repetitionLocation = glGetUniformLocation(shader->Program, "tex_repetition");
+                if(repetitionLocation != -1)
+                {
+                    glUniform1f(repetitionLocation, texture_repetition());
+                }
             }
 
             drawObject();
+        }
+
+        void drawImGui() {
+            ImGui::SeparatorText(m_name.c_str());
+			if (ImGui::DragFloat3((m_name + " position").c_str(), (float*)&imgui_position)) { this->setPosition(imgui_position); }
+			if (ImGui::DragFloat3((m_name + " rotation").c_str(), (float*)&imgui_rotation)) { this->setRotation(imgui_rotation); }
+            if (ImGui::InputFloat((m_name + " scale").c_str(), (float*)&imgui_scale_f)) { this->setScale(imgui_scale_f); }
+            if (ImGui::ColorEdit3((m_name + " color").c_str(), (float*)&imgui_color)) { this->setColor(imgui_color); }
+            if (ImGui::SliderFloat((m_name + " texture repetition").c_str(), &imgui_tex_repetition, 0.0f, 100.0f))
+            {
+                Texture* tex = this->texture();
+                if (tex)
+                {
+                    setTextureRepetition(imgui_tex_repetition);
+                }
+            }
         }
 
     protected:

@@ -45,6 +45,9 @@ public:
     ~CelShadingShaderScene()
     {
         delete screen_quad;
+        delete drawer_model;
+        delete plane_model;
+        delete wall_texture;
         delete lut_cel_shading_texture;
 
         glDeleteRenderbuffers(1, &rbo);
@@ -76,44 +79,70 @@ public:
             GL_NEAREST,
             GL_NEAREST
         );
-            
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *cel_shading, glm::vec3(0.0f, -1.0f, 0.0f));
-        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
-        floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+        
+
+        plane_model = new Model("../../models/plane.obj");
+        ModelObject* floorObject = new ModelObject("Floor", plane_model, *cel_shading, glm::vec3(5.0f, -1.0f, 10.0f), 1.0f);
+        floorObject->setTexture("../../textures/cel_shading_scene/floor.png", 3.5f);
+
+        wall_texture = new Texture("../../textures/cel_shading_scene/wall.jpg");
+
+        ModelObject* wallObject_1 = new ModelObject("Wall_1", plane_model, *cel_shading, glm::vec3(5.0f, 0.0f, 5.0f), 1.5f, glm::vec3(90.0f, 0.0f, 0.0f));
+        wallObject_1->setTexture(wall_texture);
+        ModelObject* wallObject_2 = new ModelObject("Wall_2", plane_model, *cel_shading, glm::vec3(5.0f, 0.0f, 15.0f), 1.5f, glm::vec3(90.0f, 0.0f, 180.0f));
+        wallObject_2->setTexture(wall_texture);
+        ModelObject* wallObject_3 = new ModelObject("Wall_3", plane_model, *cel_shading, glm::vec3(0.0f, 0.0f, 10.0f), 1.5f, glm::vec3(90.0f, 0.0f, -90.0f));
+        wallObject_3->setTexture(wall_texture);
+        ModelObject* wallObject_4 = new ModelObject("Wall_4", plane_model, *cel_shading, glm::vec3(10.0f, 0.0f, 10.0f), 1.5f, glm::vec3(90.0f, 0.0f, 90.0f));
+        wallObject_4->setTexture(wall_texture);
+        ModelObject* wallObject_5 = new ModelObject("Wall_5", plane_model, *cel_shading, glm::vec3(5.0f, 2.5f, 10.0f), 1.5f, glm::vec3(180.0f, 0.0f, 0.0f));
+        wallObject_5->setTexture(wall_texture);
+
+        // we load the model(s) (code of Model class is in include/utils/model.h)
+        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *cel_shading, glm::vec3(8.0f, -0.85f, 7.0f), 0.05f);
+        bunnyObject->setColor(glm::vec3(0.500f, 0.471f, 0.441f));
         
         // we load the model(s) (code of Model class is in include/utils/model.h)
-        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *cel_shading, glm::vec3(-5.0f, 1.0f, -5.0f), 0.5f);
+        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *cel_shading, glm::vec3(0.9f, -0.79f, 10.5f), 0.2f);
+        sphereObject->setColor(glm::vec3(0.564f, 0.731f, 1.000f));
         
-        // we load the model(s) (code of Model class is in include/utils/model.h)
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *cel_shading, glm::vec3(0.0f, 1.0f, -5.0f), 1.5f);
+        ModelObject* duckObject = new ModelObject("Duck", "../../models/cel_shading_scene/rubber_duck_toy_lp.gltf", *cel_shading, glm::vec3(2.0f, -1.0f, 13.0), 1.0f, glm::vec3(-90.0f, 0.0, 150.0f));
+        duckObject->setTexture("../../textures/cel_shading_scene/rubber_duck_toy_diff_1k.jpg");
         
-        ModelObject* duckObject = new ModelObject("Duck", "../../models/cel_shading_scene/rubber_duck_toy_lp.gltf", *cel_shading, glm::vec3(-1.0f, -1.0f, 4.0), 1.0f, glm::vec3(-90.0f, 0.0, 150.0f));
-        Texture* duckTexture = new Texture("../../textures/cel_shading_scene/rubber_duck_toy_diff_1k.jpg");
-        duckObject->setTexture(duckTexture);
+        ModelObject* teddyObject = new ModelObject("Teddy", "../../models/cel_shading_scene/teddybear.fbx", *cel_shading, glm::vec3(5.0, 0.05f, 14.0f), 1.0f, glm::vec3(-90.0f, 0.0, 180.0f));
+        teddyObject->setTexture("../../textures/cel_shading_scene/teddybear_base.png");
         
-        ModelObject* teddyObject = new ModelObject("Teddy", "../../models/cel_shading_scene/teddybear.fbx", *cel_shading, glm::vec3(0.0, 0.0, 4.0f), 1.0f, glm::vec3(-90.0f, 0.0, 180.0f));
-        Texture* teddyTexture = new Texture("../../textures/cel_shading_scene/teddybear_base.png");
-        teddyObject->setTexture(teddyTexture);
+        ModelObject* teddyObject2 = new ModelObject("Teddy 2", "../../models/cel_shading_scene/teddybear_2.gltf", *cel_shading, glm::vec3(8.5f, 0.06f, 10.0f), 0.5f, glm::vec3(-90.0f, 0.0, -75.0));
+        teddyObject2->setTexture("../../textures/cel_shading_scene/teddybear_2.png");
         
-        ModelObject* teddyObject2 = new ModelObject("Teddy2", "../../models/cel_shading_scene/teddybear_2.gltf", *cel_shading, glm::vec3(0.0, 0.0, 0.0), 0.5f, glm::vec3(-90.0f, 0.0, 0.0));
-        Texture* teddyTexture2 = new Texture("../../textures/cel_shading_scene/teddybear_2.png");
-        teddyObject2->setTexture(teddyTexture2);
+        ModelObject* spidermanObject = new ModelObject("Spiderman", "../../models/cel_shading_scene/spiderman_toy_lp.gltf", *cel_shading, glm::vec3(5.2f, -1.07f, 6.0f), 0.15f, glm::vec3(-90.0f, 0.0, 0.0));
+        spidermanObject->setTexture("../../textures/cel_shading_scene/spiderman_toy.png");
         
-        ModelObject* spidermanObject = new ModelObject("Spiderman", "../../models/cel_shading_scene/spiderman_toy_lp.gltf", *cel_shading, glm::vec3(1.2f, -1.07f, 0.0), 0.15f, glm::vec3(-90.0f, 0.0, 0.0));
-        Texture* spidermanTexture = new Texture("../../textures/cel_shading_scene/spiderman_toy.png");
-        spidermanObject->setTexture(spidermanTexture);
+        ModelObject* cribObject = new ModelObject("Crib", "../../models/cel_shading_scene/baby_crib.gltf", *cel_shading, glm::vec3(4.0, -1.0f, 6.0), 0.3f, glm::vec3(0.0f, 30.0f, 0.0));
+        cribObject->setTexture("../../textures/cel_shading_scene/baby_crib.jpeg");
         
-        ModelObject* cribObject = new ModelObject("Crib", "../../models/cel_shading_scene/baby_crib.gltf", *cel_shading, glm::vec3(0.0, -1.0f, 0.0), 0.3f, glm::vec3(0.0f, 30.0f, 0.0));
-        Texture* cribTexture = new Texture("../../textures/cel_shading_scene/baby_crib.jpeg");
-        cribObject->setTexture(cribTexture);
+        ModelObject* cubesToyObject = new ModelObject("Cubes", "../../models/cel_shading_scene/cubes_toy.gltf", *cel_shading, glm::vec3(1.75f, -1.0f, 8.85f), 0.085f, glm::vec3(0.0, 0.0, 0.0));
+        cubesToyObject->setTexture("../../textures/cel_shading_scene/cubes_toy.png");
         
-        ModelObject* cubesToyObject = new ModelObject("Cubes toy", "../../models/cel_shading_scene/cubes_toy.gltf", *cel_shading, glm::vec3(-1.25f, -1.0f, 0.85), 0.085f, glm::vec3(0.0, 0.0, 0.0));
-        Texture* cubesToyTexture = new Texture("../../textures/cel_shading_scene/cubes_toy.png");
-        cubesToyObject->setTexture(cubesToyTexture);
+        ModelObject* giraffeToyObject = new ModelObject("Giraffe", "../../models/cel_shading_scene/giraffe_toy.fbx", *cel_shading, glm::vec3(8.0f, -0.68f, 13.5f), 1.0f, glm::vec3(0.0, -140.0f, 0.0));
+        giraffeToyObject->setTexture("../../textures/cel_shading_scene/giraffe_toy.jpeg");
+
+        drawer_model = new Model("../../models/cel_shading_scene/drawer.fbx");
+
+        ModelObject* drawerBlueObject = new ModelObject("Drawer Blue", drawer_model, *cel_shading, glm::vec3(8.5f, -1.0f, 10.0f), 0.65f, glm::vec3(0.0, -90.0f, 0.0));
+        drawerBlueObject->setTexture("../../textures/cel_shading_scene/drawer_blue.png");
+
+        ModelObject* drawerWoodObject = new ModelObject("Drawer Wood", drawer_model, *cel_shading, glm::vec3(5.0f, -1.0f, 14.0f), 0.65f, glm::vec3(0.0, 180.0f, 0.0));
+        drawerWoodObject->setTexture("../../textures/cel_shading_scene/drawer_wood.png");
 
         screen_quad = new ScreenQuadObject;
     
         add_internal_object(floorObject);
+        add_internal_object(wallObject_1);
+        add_internal_object(wallObject_2);
+        add_internal_object(wallObject_3);
+        add_internal_object(wallObject_4);
+        add_internal_object(wallObject_5);
         add_internal_object(bunnyObject);
         add_internal_object(sphereObject);
         add_internal_object(duckObject);
@@ -122,6 +151,9 @@ public:
         add_internal_object(spidermanObject);
         add_internal_object(cribObject);
         add_internal_object(cubesToyObject);
+        add_internal_object(giraffeToyObject);
+        add_internal_object(drawerBlueObject);
+        add_internal_object(drawerWoodObject);
 
         // RBO
         glGenRenderbuffers(1, &rbo);
@@ -228,7 +260,7 @@ private:
     GLint width;
     GLint height;
     
-    glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
+    glm::vec3 lightPos0 = glm::vec3(5.0f, 2.0f, 10.0f);
     
     Shader* cel_shading;
     Shader* back_face_shader;
@@ -236,6 +268,9 @@ private:
 
     Texture* lut_cel_shading_texture;
 
+    Model* plane_model;
+    Model* drawer_model;
+    Texture* wall_texture;
     ScreenQuadObject* screen_quad;
 
     GLuint rbo;
