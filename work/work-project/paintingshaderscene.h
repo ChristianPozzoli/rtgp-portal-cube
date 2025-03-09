@@ -76,6 +76,10 @@ public:
             (SHADER_PATH + "painting/painting.frag").c_str()
         );
 
+        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
+        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
+        floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+        
         ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
         bunnyObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
         
@@ -84,17 +88,24 @@ public:
         
         ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
         cubeObject->setColor(glm::vec3(0.1f, 0.3f, 1.0f));
-        ModelObject* cubeObject_2 = new ModelObject("Cube2", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
 
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
-        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
-        floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+        ModelObject* orangeObject = new ModelObject("Orange", "../../models/painting_scene/orange.fbx", *illum_shader, glm::vec3(-4.0f, -0.6f, 10.0f), 3.0f, glm::vec3(-75.0f, 50.0f, 17.0f));
+        orangeObject->setTexture("../../textures/painting_scene/orange.jpeg");
+        ModelObject* watermelonObject = new ModelObject("Watermelon", "../../models/painting_scene/watermelon.fbx", *illum_shader, glm::vec3(17.0f, 1.0f, 12.0f), 4.0f, glm::vec3(180.0f, 0.0f, 120.0f));
+        watermelonObject->setTexture("../../textures/painting_scene/watermelon.png");
+        ModelObject* pomegranateObject = new ModelObject("Pomegranate", "../../models/painting_scene/pomegranate.fbx", *illum_shader, glm::vec3(3.0f, -1.0f, 20.0f), 5.0f, glm::vec3(0.0f, 130.0f, 0.0f));
+        pomegranateObject->setTexture("../../textures/painting_scene/pomegranate.jpeg");
+        ModelObject* strawberryObject = new ModelObject("Strawberry", "../../models/painting_scene/strawberry.fbx", *illum_shader, glm::vec3(8.0f, 1.0f, 0.0f), 3.5f, glm::vec3(182.0f, 10.0f, 109.0f));
+        strawberryObject->setTexture("../../textures/painting_scene/strawberry.jpeg");
 
         add_internal_object(floorObject);
         add_internal_object(bunnyObject);
         add_internal_object(cubeObject);
-        add_internal_object(cubeObject_2);
         add_internal_object(sphereObject);
+        add_internal_object(orangeObject);
+        add_internal_object(watermelonObject);
+        add_internal_object(pomegranateObject);
+        add_internal_object(strawberryObject);
 
         width_fraction = width / resolution_fraction;
         height_fraction = height / resolution_fraction;

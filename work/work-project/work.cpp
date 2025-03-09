@@ -93,9 +93,9 @@ glm::vec3 rightBackBorderColor(1.0f, 0.0f, 1.0f);
 GLfloat planeScale = 0.95f;
 GLfloat planeBorder = 0.0f;
 
-glm::vec3 cubeStructurePosition(5.0f, 0.25f, 10.0f);
+glm::vec3 cubeStructurePosition(5.0f, 0.2f, 10.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
-GLfloat cubeStructureScale = 2.0f;
+GLfloat cubeStructureScale = 1.5f;
 
 ShaderScene* currentScene = nullptr;
 
