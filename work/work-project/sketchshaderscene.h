@@ -37,7 +37,7 @@ using namespace std;
 class SketchShaderScene : public ShaderScene
 {
 public:
-    SketchShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
+    SketchShaderScene (std::string m_name, GLint width, GLint height) : ShaderScene(m_name, width, height)
     {}
 
     ~SketchShaderScene()
@@ -157,20 +157,20 @@ public:
         // RBO
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);  
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_width, m_height);  
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         // NORMAL FBO
-        normal_fbo = new FrameBuffer(width, height, rbo);
+        normal_fbo = new FrameBuffer(m_width, m_height, rbo);
         
         // DEPTH FBO
-        lambert_depth_fbo = new FrameBuffer(width, height, rbo);
+        lambert_depth_fbo = new FrameBuffer(m_width, m_height, rbo);
         
         // SPHEREMAP FBO
-        spheremap_fbo = new FrameBuffer(width, height, rbo);
+        spheremap_fbo = new FrameBuffer(m_width, m_height, rbo);
 
         // COLOR FBO
-        color_fbo = new FrameBuffer(width, height, rbo);
+        color_fbo = new FrameBuffer(m_width, m_height, rbo);
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -178,6 +178,27 @@ public:
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void update_window(GLFWwindow* window, GLint width, GLint height)
+    {
+        ShaderScene::update_window(window, width, height);
+
+        delete normal_fbo;
+        delete lambert_depth_fbo;
+        delete spheremap_fbo;
+        delete color_fbo;
+
+        glDeleteRenderbuffers(1, &rbo);
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);  
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+        normal_fbo = new FrameBuffer(width, height, rbo);
+        lambert_depth_fbo = new FrameBuffer(width, height, rbo);
+        spheremap_fbo = new FrameBuffer(width, height, rbo);
+        color_fbo = new FrameBuffer(width, height, rbo);
     }
 
     void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
@@ -234,8 +255,8 @@ public:
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
-            0, 0, width, height,
-            0, 0, width, height,
+            0, 0, m_width, m_height,
+            0, 0, m_width, m_height,
             GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
         );
@@ -304,9 +325,6 @@ public:
     }
 
 private:
-    GLFWwindow* window;
-    GLint width;
-    GLint height;
     GLboolean wireframe = GL_FALSE;
 
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);

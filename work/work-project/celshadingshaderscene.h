@@ -39,7 +39,7 @@ using namespace std;
 class CelShadingShaderScene : public ShaderScene
 {
 public:
-    CelShadingShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
+    CelShadingShaderScene (std::string m_name, GLint width, GLint height) : ShaderScene(m_name, width, height)
     {}
 
     ~CelShadingShaderScene()
@@ -158,10 +158,25 @@ public:
         // RBO
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);  
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_width, m_height);  
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
         // SCREEN FBO
+        screen_fbo = new FrameBuffer(m_width, m_height, rbo);
+    }
+
+    void update_window(GLFWwindow* window, GLint width, GLint height)
+    {
+        ShaderScene::update_window(window, width, height);
+
+        delete screen_fbo;
+
+        glDeleteRenderbuffers(1, &rbo);
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);  
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
         screen_fbo = new FrameBuffer(width, height, rbo);
     }
 
@@ -196,8 +211,8 @@ public:
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
-            0, 0, width, height,
-            0, 0, width, height,
+            0, 0, m_width, m_height,
+            0, 0, m_width, m_height,
             GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
         );
@@ -256,10 +271,6 @@ public:
     }
 
 private:
-    GLFWwindow* window;
-    GLint width;
-    GLint height;
-    
     glm::vec3 lightPos0 = glm::vec3(5.0f, 2.0f, 10.0f);
     
     Shader* cel_shading;

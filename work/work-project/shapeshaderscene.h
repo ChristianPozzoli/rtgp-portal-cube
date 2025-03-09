@@ -39,7 +39,7 @@ using namespace std;
 class ShapeShaderScene : public ShaderScene
 {
 public:
-    ShapeShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
+    ShapeShaderScene (std::string m_name, GLint width, GLint height) : ShaderScene(m_name, width, height)
     {}
 
     ~ShapeShaderScene()
@@ -77,12 +77,27 @@ public:
         // RBO
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_width, m_height);  
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+        screen_fbo = new FrameBuffer(m_width, m_height, rbo);        
+
+        screen_quad = new ScreenQuadObject();
+    }
+
+    void update_window(GLFWwindow* window, GLint width, GLint height)
+    {
+        ShaderScene::update_window(window, width, height);
+
+        delete screen_fbo;
+
+        glDeleteRenderbuffers(1, &rbo);
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);  
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-        screen_fbo = new FrameBuffer(width, height, rbo);        
-
-        screen_quad = new ScreenQuadObject();
+        screen_fbo = new FrameBuffer(width, height, rbo);
     }
 
     void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
@@ -103,8 +118,8 @@ public:
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         
         glBlitFramebuffer(
-            0, 0, width, height,
-            0, 0, width, height,
+            0, 0, m_width, m_height,
+            0, 0, m_width, m_height,
             GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
         );
@@ -148,10 +163,6 @@ public:
     }
 
 private:
-    GLFWwindow* window;
-    GLint width;
-    GLint height;
-    
     Shader* illum_shader;
     Shader* screen_shader;
 

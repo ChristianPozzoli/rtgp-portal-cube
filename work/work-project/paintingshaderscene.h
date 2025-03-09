@@ -39,7 +39,7 @@ using namespace std;
 class PaintingShaderScene : public ShaderScene
 {
 public:
-    PaintingShaderScene (std::string m_name, GLFWwindow* window, GLint width, GLint height) : ShaderScene(m_name), window(window), width(width), height(height)
+    PaintingShaderScene (std::string m_name, GLint width, GLint height) : ShaderScene(m_name, width, height)
     {}
 
     ~PaintingShaderScene()
@@ -55,6 +55,12 @@ public:
         delete paint_shader;
 
         glDeleteRenderbuffers(1, &rbo);
+    }
+
+    void update_window(GLFWwindow* window, GLint width, GLint height) override
+    {
+        ShaderScene::update_window(window, width, height);
+        update_fbos(width, height);
     }
 
     void setup_scene() override
@@ -76,18 +82,8 @@ public:
             (SHADER_PATH + "painting/painting.frag").c_str()
         );
 
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
-        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
+        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f), 20.0f);
         floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
-        
-        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-        bunnyObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
-        
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
-        sphereObject->setColor(glm::vec3(1.0f, 1.0f, 0.0f));
-        
-        ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
-        cubeObject->setColor(glm::vec3(0.1f, 0.3f, 1.0f));
 
         ModelObject* orangeObject = new ModelObject("Orange", "../../models/painting_scene/orange.fbx", *illum_shader, glm::vec3(-4.0f, -0.6f, 10.0f), 3.0f, glm::vec3(-75.0f, 50.0f, 17.0f));
         orangeObject->setTexture("../../textures/painting_scene/orange.jpeg");
@@ -97,18 +93,27 @@ public:
         pomegranateObject->setTexture("../../textures/painting_scene/pomegranate.jpeg");
         ModelObject* strawberryObject = new ModelObject("Strawberry", "../../models/painting_scene/strawberry.fbx", *illum_shader, glm::vec3(8.0f, 1.0f, 0.0f), 3.5f, glm::vec3(182.0f, 10.0f, 109.0f));
         strawberryObject->setTexture("../../textures/painting_scene/strawberry.jpeg");
+        ModelObject* bananaObject = new ModelObject("Banana", "../../models/painting_scene/banana.fbx", *illum_shader, glm::vec3(-1.0f, 1.3f, 1.0f), 6.0f, glm::vec3(-82.0f, 1.0f, 126.0f));
+        bananaObject->setTexture("../../textures/painting_scene/banana.jpeg");
+        ModelObject* pearObject = new ModelObject("Pear", "../../models/painting_scene/pear.fbx", *illum_shader, glm::vec3(12.0f, 2.75f, 26.0f), 4.0f, glm::vec3(0.0f, 65.0f, 85.0f));
+        pearObject->setTexture("../../textures/painting_scene/pear.jpeg");
+        ModelObject* appleObject = new ModelObject("Apple", "../../models/painting_scene/apple.fbx", *illum_shader, glm::vec3(30.0f, 14.0f, -15.0f), 15.0f, glm::vec3(0.0f, 226.0f, -8.0f));
+        appleObject->setTexture("../../textures/painting_scene/apple.png");
+        ModelObject* pineappleObject = new ModelObject("Pineapple", "../../models/painting_scene/pineapple.fbx", *illum_shader, glm::vec3(-25.0f, 18.0f, 22.0f), 20.0f, glm::vec3(90.0f, 0.0f, 0.0f));
+        pineappleObject->setTexture("../../textures/painting_scene/pineapple.jpeg");
 
         add_internal_object(floorObject);
-        add_internal_object(bunnyObject);
-        add_internal_object(cubeObject);
-        add_internal_object(sphereObject);
         add_internal_object(orangeObject);
         add_internal_object(watermelonObject);
         add_internal_object(pomegranateObject);
         add_internal_object(strawberryObject);
+        add_internal_object(bananaObject);
+        add_internal_object(pearObject);
+        add_internal_object(appleObject);
+        add_internal_object(pineappleObject);
 
-        width_fraction = width / resolution_fraction;
-        height_fraction = height / resolution_fraction;
+        width_fraction = m_width / resolution_fraction;
+        height_fraction = m_height / resolution_fraction;
 
         // RBO
         glGenRenderbuffers(1, &rbo);
@@ -144,7 +149,7 @@ public:
         
         glBlitFramebuffer(
             0, 0, width_fraction, height_fraction,
-            0, 0, width, height,
+            0, 0, m_width, m_height,
             GL_DEPTH_BUFFER_BIT,
             GL_NEAREST
         );
@@ -181,7 +186,7 @@ public:
         
         // DEFAULT FBO
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, width, height);
+        glViewport(0, 0, m_width, m_height);
         paint_shader->Use();
         
         paint_shader->SetInt("screenTexture", 0);
@@ -204,19 +209,7 @@ public:
         
         if (ImGui::SliderFloat("Resolution fraction", &resolution_fraction, 1.0f, 50.0f))
         {
-            delete color_fbo;
-            delete blur_fbo;
-            delete mean_fbo;
-
-            width_fraction = width / resolution_fraction;
-            height_fraction = height / resolution_fraction;
-            glGenRenderbuffers(1, &rbo);
-            glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_fraction, height_fraction);  
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);
-            color_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
-            mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
-            blur_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+            update_fbos(m_width, m_height);
         }
         
         ImGui::SliderInt("Sample dimension", &samples_dimension, 0.0f, 10.0f);
@@ -227,10 +220,6 @@ public:
     }
 
 private:
-    GLFWwindow* window;
-    GLint width;
-    GLint height;
-    
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
     GLfloat Kd = 0.5f;
     GLfloat Ks = 0.4f;
@@ -271,5 +260,24 @@ private:
         illum_shader.SetFloat("shininess", shininess);
         illum_shader.SetFloat("alpha", alpha);
         illum_shader.SetFloat("F0", F0);
+    }
+
+    void update_fbos(GLint width, GLint height)
+    {
+        delete color_fbo;
+        delete blur_fbo;
+        delete mean_fbo;
+
+        width_fraction = width / resolution_fraction;
+        height_fraction = height / resolution_fraction;
+
+        glDeleteRenderbuffers(1, &rbo);
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width_fraction, height_fraction);  
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        color_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+        mean_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
+        blur_fbo = new FrameBuffer(width_fraction, height_fraction, rbo);
     }
 };

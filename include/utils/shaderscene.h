@@ -18,7 +18,7 @@ using namespace std;
 class ShaderScene
 {
 public:
-    ShaderScene(std::string name) : m_name(name)
+    ShaderScene(std::string name, GLint width, GLint height) : m_name(name), m_width(width), m_height(height)
     {
         external_objects = new vector<DrawableSceneObject*>;
         internal_objects = new vector<DrawableSceneObject*>;
@@ -39,6 +39,13 @@ public:
     }
 
     virtual void setup_scene() {}
+
+    virtual void update_window(GLFWwindow* window, GLint width, GLint height)
+    {
+        m_width = width;
+        m_height = height;
+        cout << "[" << m_name << "] New size: " << width << ", " << height << endl;
+    }
 
     virtual void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
     {}
@@ -81,6 +88,8 @@ public:
     }
 
 protected:
+    GLint m_width;
+    GLint m_height;
     const string SHADER_PATH = "../../shaders/";
 
     std::string m_name;

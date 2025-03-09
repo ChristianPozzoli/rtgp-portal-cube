@@ -49,6 +49,7 @@ GLfloat fieldOfViewY = 45.0f;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void window_size_callback(GLFWwindow* window, int width, int height);
 void apply_camera_movements();
 bool canMoveCamera = false;
 
@@ -132,6 +133,7 @@ int main()
 
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetWindowSizeCallback(window, window_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -166,21 +168,21 @@ int main()
     SetupShader(illum_shader.Program);
     PrintCurrentShader(current_subroutine);
 
-    ShapeShaderScene shapeScene("Shape", window, width, height);
+    ShapeShaderScene shapeScene("Shape", width, height);
     shapeScene.setup_scene();
 
     currentScene = &shapeScene;
     
-    SketchShaderScene sketchScene("Sketch", window, width, height);
+    SketchShaderScene sketchScene("Sketch", width, height);
     sketchScene.setup_scene();
     
-    CelShadingShaderScene celShadingScene("CelShading", window, width, height);
+    CelShadingShaderScene celShadingScene("CelShading", width, height);
     celShadingScene.setup_scene();
     
-    PaintingShaderScene paintingScene("Painting", window, width, height);
+    PaintingShaderScene paintingScene("Painting", width, height);
     paintingScene.setup_scene();
     
-    DitherShaderScene ditherScene("Dither", window, width, height);
+    DitherShaderScene ditherScene("Dither", width, height);
     ditherScene.setup_scene();
     
     ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
@@ -634,6 +636,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         canMoveCamera = false;
+    }
+}
+
+void window_size_callback(GLFWwindow* window, int width, int height)
+{
+    screenWidth = width;
+    screenHeight = height;
+    glViewport(0, 0, width, height);
+    currentScene->update_window(window, width, height);
+    for (auto i = planeCubeMap.cbegin(); i != planeCubeMap.cend(); ++i) {
+        (*i).second->update_window(window, width, height);
     }
 }
 
