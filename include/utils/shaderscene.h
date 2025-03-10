@@ -46,8 +46,13 @@ public:
         m_height = height;
     }
 
-    virtual void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr)
-    {}
+    virtual void update_scene(
+                    Camera* camera,
+                    glm::mat4& view,
+                    glm::mat4& projection,
+                    Shader* override_shader = nullptr,
+                    bool is_main_scene = false
+                ) {}
 
     void add_external_object(DrawableSceneObject* obj)
     {

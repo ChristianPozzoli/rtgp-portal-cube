@@ -26,7 +26,10 @@ vec4 compute_region(vec2 l, vec2 u, int samples) {
     }
 
     vec3 mean = sum / samples;
-    float variance = length(abs((sq_sum / samples) - (mean * mean)));
+    
+    // float variance = length(abs((sq_sum / samples) - (mean * mean)));
+    sq_sum = (sq_sum / samples) - (mean * mean);
+    float variance = abs(sq_sum.x) + abs(sq_sum.y) + abs(sq_sum.z);
 
     return vec4(mean, variance);
 }

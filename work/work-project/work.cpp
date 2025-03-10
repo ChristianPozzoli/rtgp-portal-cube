@@ -53,11 +53,6 @@ void window_size_callback(GLFWwindow* window, int width, int height);
 void apply_camera_movements();
 bool canMoveCamera = false;
 
-GLuint current_subroutine = 0;
-vector<std::string> subroutines;
-void SetupShader(int shader_program);
-void PrintCurrentShader(int subroutine);
-
 bool keys[1024];
 GLfloat lastX, lastY;
 bool firstMouse = true;
@@ -92,7 +87,6 @@ glm::vec3 leftBackBorderColor(1.0f, 1.0f, 0.0f);
 glm::vec3 rightBackBorderColor(1.0f, 0.0f, 1.0f);
 
 GLfloat planeScale = 0.95f;
-GLfloat planeBorder = 0.0f;
 
 glm::vec3 cubeStructurePosition(5.0f, 0.2f, 10.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
@@ -108,7 +102,7 @@ glm::mat4 ModifyProjectionMatrix(const glm::mat4& projection, const glm::vec4& c
 
 GLfloat planeOffset()
 {
-    return ((planeScale + planeBorder) / 2.0f) * glm::cos(glm::radians(0.0f));
+    return (planeScale / 2.0f) * glm::cos(glm::radians(0.0f));
 }
 
 /////////////////// MAIN function ///////////////////////
@@ -165,9 +159,6 @@ int main()
         (SHADER_PATH + "fullcolor.frag").c_str()
     );
 
-    SetupShader(illum_shader.Program);
-    PrintCurrentShader(current_subroutine);
-
     ShapeShaderScene shapeScene("Shape", width, height);
     shapeScene.setup_scene();
 
@@ -188,16 +179,16 @@ int main()
     ModelObject cubeStructure("Cube structure", "../../models/cube_structure.obj", illum_shader, cubeStructurePosition, cubeStructureScale);
     cubeStructure.setColor(glm::vec3(1.0f, 1.0f, 1.0f));
 
-    PlaneObject frontPlaneObject("Plane front", color_shader, glm::vec3(0.0f, 0.0f, planeOffset()), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+    PlaneObject frontPlaneObject("Plane front", color_shader, glm::vec3(0.0f, 0.0f, planeOffset()), planeScale, glm::vec3(0.0f, 0.0f, 0.0f));
     frontPlaneObject.setColor(leftFrontBorderColor);
     
-    PlaneObject rightPlaneObject("Plane right", color_shader, glm::vec3(planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, 90.0f, 0.0f));
+    PlaneObject rightPlaneObject("Plane right", color_shader, glm::vec3(planeOffset(), 0.0f, 0.0f), planeScale, glm::vec3(0.0f, 90.0f, 0.0f));
     rightPlaneObject.setColor(rightFrontBorderColor);
     
-    PlaneObject leftPlaneObject("Plane left", color_shader, glm::vec3(- planeOffset(), 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, - 90.0f, 0.0f));
+    PlaneObject leftPlaneObject("Plane left", color_shader, glm::vec3(- planeOffset(), 0.0f, 0.0f), planeScale, glm::vec3(0.0f, - 90.0f, 0.0f));
     leftPlaneObject.setColor(leftBackBorderColor);
     
-    PlaneObject backPlaneObject("Plane back", color_shader, glm::vec3(0.0f, 0.0f,- planeOffset()), 1.0f, glm::vec3(0.0f, 180.0f, 0.0f));
+    PlaneObject backPlaneObject("Plane back", color_shader, glm::vec3(0.0f, 0.0f,- planeOffset()), planeScale, glm::vec3(0.0f, 180.0f, 0.0f));
     backPlaneObject.setColor(rightBackBorderColor);
 
     cubeStructure.addChild(&frontPlaneObject);
@@ -266,14 +257,6 @@ int main()
                     leftPlaneObject.setPosition(glm::vec3(- planeOffset(), 0.0f, 0.0f));
                     backPlaneObject.setPosition(glm::vec3(0.0f, 0.0f, - planeOffset()));
                 }
-                if (ImGui::InputFloat("Plane border", &planeBorder))
-                {
-                    frontPlaneObject.setPosition(glm::vec3(0.0f, 0.0f, planeOffset()));
-                    rightPlaneObject.setPosition(glm::vec3(planeOffset(), 0.0f, 0.0f));
-
-                    leftPlaneObject.setPosition(glm::vec3(- planeOffset(), 0.0f, 0.0f));
-                    backPlaneObject.setPosition(glm::vec3(0.0f, 0.0f, - planeOffset()));
-                }
             
                 ImGui::SeparatorText("PortalCube");
                 if (ImGui::DragFloat3("CubeStructure position", (float*)&cubeStructurePosition)) { cubeStructure.setPosition(cubeStructurePosition); }
@@ -333,7 +316,7 @@ int main()
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_STENCIL_TEST);
         
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Disable color drawing
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         
         glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -342,13 +325,12 @@ int main()
         
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
         
-        currentScene->update_scene(&camera, view, projection);
+        currentScene->update_scene(&camera, view, projection, nullptr, true);
         
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
         currentScene->draw(view, projection);
 
-        glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
         setup_illum_shader(illum_shader);
         cubeStructure.draw(view, projection);
         
@@ -382,7 +364,6 @@ int main()
             
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
             glStencilFunc(GL_ALWAYS, i + 1, 0xFF);
-            plane->setScale(glm::vec3(planeScale));
             
             plane->draw(view, projection);
         }
@@ -391,7 +372,6 @@ int main()
         
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); // Enable color drawing
         glStencilMask(0x00); // Disable stencil drawing
-        glDepthMask(0xFF);
 		
         for (uint8_t i = 0; i < visiblePlanesSize; ++i)
         {
@@ -402,23 +382,19 @@ int main()
             
             glStencilFunc(GL_EQUAL, i + 1, 0xFF);
             
-            glm::vec4 portalNormal = glm::normalize(glm::inverseTranspose(view * plane->modelMatrix()) * glm::vec4(0.0f, 0.0f, - 1.0f, 0.0f));
+            glm::vec4 portalNormal = glm::normalize(
+                                        glm::inverseTranspose(view * plane->modelMatrix()) *
+                                        glm::vec4(0.0f, 0.0f, - 1.0f, 0.0f)
+                                    );
             portalProjection = ModifyProjectionMatrix(
                 projection,
                 portalNormal
             );
             
-            glClear(GL_DEPTH_BUFFER_BIT);
+            glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
             scene->update_scene(&camera, view, portalProjection);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             scene->draw(view, projection);
-            glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-            
-            if(planeBorder > 0) {
-                glStencilFunc(GL_NOTEQUAL, i + 1, 0xFF);
-                plane->setScale(glm::vec3(planeScale + planeBorder));
-                plane->draw(view, projection);
-            }
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -437,61 +413,6 @@ int main()
     // we close and delete the created context
     glfwTerminate();
     return 0;
-}
-
-
-//////////////////////////////////////////
-// The function parses the content of the Shader Program, searches for the Subroutine type names,
-// the subroutines implemented for each type, print the names of the subroutines on the terminal, and add the names of
-// the subroutines to the shaders vector, which is used for the shaders swapping
-void SetupShader(int program)
-{
-    int maxSub,maxSubU,countActiveSU;
-    GLchar name[256];
-    int len, numCompS;
-
-    // global parameters about the Subroutines parameters of the system
-    glGetIntegerv(GL_MAX_SUBROUTINES, &maxSub);
-    glGetIntegerv(GL_MAX_SUBROUTINE_UNIFORM_LOCATIONS, &maxSubU);
-    std::cout << "Max Subroutines:" << maxSub << " - Max Subroutine Uniforms:" << maxSubU << std::endl;
-
-    // get the number of Subroutine uniforms (only for the Fragment shader, due to the nature of the exercise)
-    // it is possible to add similar calls also for the Vertex shader
-    glGetProgramStageiv(program, GL_FRAGMENT_SHADER, GL_ACTIVE_SUBROUTINE_UNIFORMS, &countActiveSU);
-
-    // print info for every Subroutine uniform
-    for (int i = 0; i < countActiveSU; i++) {
-
-        // get the name of the Subroutine uniform (in this example, we have only one)
-        glGetActiveSubroutineUniformName(program, GL_FRAGMENT_SHADER, i, 256, &len, name);
-        // print index and name of the Subroutine uniform
-        std::cout << "Subroutine Uniform: " << i << " - name: " << name << std::endl;
-
-        // get the number of subroutines
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_NUM_COMPATIBLE_SUBROUTINES, &numCompS);
-
-        // get the indices of the active subroutines info and write into the array s
-        int *s =  new int[numCompS];
-        glGetActiveSubroutineUniformiv(program, GL_FRAGMENT_SHADER, i, GL_COMPATIBLE_SUBROUTINES, s);
-        std::cout << "Compatible Subroutines:" << std::endl;
-
-        // for each index, get the name of the subroutines, print info, and save the name in the shaders vector
-        for (int j=0; j < numCompS; ++j) {
-            glGetActiveSubroutineName(program, GL_FRAGMENT_SHADER, s[j], 256, &len, name);
-            std::cout << "\t" << s[j] << " - " << name << "\n";
-            subroutines.push_back(name);
-        }
-        std::cout << std::endl;
-
-        delete[] s;
-    }
-}
-
-//////////////////////////////////////////
-// we print on console the name of the currently used shader subroutine
-void PrintCurrentShader(int subroutine)
-{
-    std::cout << "Current shader subroutine: " << subroutines[subroutine]  << std::endl;
 }
 
 //////////////////////////////////////////

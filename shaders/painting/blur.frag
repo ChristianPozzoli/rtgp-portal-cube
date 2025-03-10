@@ -26,9 +26,9 @@ void main()
     // Gaussian blur approximation kernel
     float kernel_fract = 16.0;
     float kernel[9] = float[](
-         1, 2, 1,
-         2, 4, 2,
-         1, 2, 1
+         2, 1, 2,
+         1, 4, 1,
+         2, 1, 2
     );
 
     vec3 col = vec3(0.0);

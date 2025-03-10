@@ -135,7 +135,7 @@ public:
         screen_fbo = new FrameBuffer(width, height, rbo);
     }
 
-    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr) override
+    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr, bool is_main_scene = false) override
     {
         glEnable(GL_DEPTH_TEST);
         
@@ -148,17 +148,19 @@ public:
         
         draw_objects(view, projection);
         
-        // RENDER ON DEFAULT FBO
-        screen_fbo->bind_read();
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        
-        glBlitFramebuffer(
-            0, 0, m_width, m_height,
-            0, 0, m_width, m_height,
-            GL_DEPTH_BUFFER_BIT,
-            GL_NEAREST
-        );
-        
+        if (is_main_scene)
+        {
+            screen_fbo->bind_read();
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            
+            glBlitFramebuffer(
+                0, 0, m_width, m_height,
+                0, 0, m_width, m_height,
+                GL_DEPTH_BUFFER_BIT,
+                GL_NEAREST
+            );
+        }
+            
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     
@@ -171,6 +173,7 @@ public:
         screen_shader->SetVec2("screen_size", 1, glm::value_ptr(glm::vec2(m_width, m_height)));
         screen_shader->SetFloat("color_factor", colorFactor);
         screen_shader->SetFloat("dither_factor", ditherFactor);
+        screen_shader->SetFloat("time", glfwGetTime());
         
         screen_shader->Use();
         glActiveTexture(GL_TEXTURE0);
