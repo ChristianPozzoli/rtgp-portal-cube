@@ -47,6 +47,9 @@ public:
         delete illum_shader;
         delete screen_shader;
 
+        delete swordModel;
+        delete swordTexture;
+
         delete screen_fbo;
         delete screen_quad;
 
@@ -63,26 +66,48 @@ public:
             (SHADER_PATH + "screen.vert").c_str(),
             (SHADER_PATH + "dithering/dither.frag").c_str()
         );
-    
-        ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -5.0f), 0.5f);
-        bunnyObject->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
         
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(5.0f, 1.0f, -5.0f), 1.5f);
+        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f), 20.0f);
+        floorObject->setColor(glm::vec3(0.534f, 0.514f, 0.183f));
+        
+        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(60.0f, 60.0f, -60.0f), 1.5f);
         sphereObject->setColor(glm::vec3(1.0f, 1.0f, 0.0f));
+        ModelObject* treasureObject = new ModelObject("Treasure", "../../models/dithering_scene/treasure.fbx", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f), 2.5f, glm::vec3(0.0f, -84.0f, 0.0f));
+        treasureObject->setColor(glm::vec3(0.505f, 0.342f, 0.000f));
+        ModelObject* krakenObject = new ModelObject("Kraken", "../../models/dithering_scene/kraken.fbx", *illum_shader, glm::vec3(26.0f, -4.0f, 0.0f), 2.5f, glm::vec3(0.0f, -60.0f, 0.0f));
+        krakenObject->setTexture("../../textures/dithering_scene/kraken.png");
+        ModelObject* tentaclesObject = new ModelObject("Tentacles", "../../models/dithering_scene/tentacles.fbx", *illum_shader, glm::vec3(5.0f, 8.0f, 10.0f), 0.8f);
+        tentaclesObject->setTexture("../../textures/dithering_scene/tentacles.png");
+        ModelObject* mantaObject = new ModelObject("Manta", "../../models/dithering_scene/manta.fbx", *illum_shader, glm::vec3(-16.0f, 18.0f, -2.0f), 8.0f, glm::vec3(0.0f, 0.0f, -38.0f));
+        mantaObject->setTexture("../../textures/dithering_scene/manta.png");
+        ModelObject* compassObject = new ModelObject("Compass", "../../models/dithering_scene/compass.fbx", *illum_shader, glm::vec3(-1.0f, -0.9f, 11.0f), 2.0f, glm::vec3(0.0f, 83.0f, -0.0f));
+        compassObject->setTexture("../../textures/dithering_scene/compass.png");
+        ModelObject* skullObject = new ModelObject("Skull", "../../models/dithering_scene/skull.fbx", *illum_shader, glm::vec3(-1.0f, -0.75f, 17.0f), 0.5f, glm::vec3(-45.0f, -22.0f, 180.0f));
         
-        ModelObject* cubeObject = new ModelObject("Cube", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -5.0f), 1.5f);
-        cubeObject->setColor(glm::vec3(0.1f, 0.3f, 1.0f));
-        ModelObject* cubeObject_2 = new ModelObject("Cube2", "../../models/cube.obj", *illum_shader, glm::vec3(-5.0f, 1.0f, -2.0f), 1.0f);
-    
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
-        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
-        floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
-    
+        swordModel = new Model("../../models/dithering_scene/sword.gltf");
+        swordTexture = new Texture("../../textures/dithering_scene/sword.png");
+        ModelObject* swordObject_1 = new ModelObject("Sword 1", swordModel, *illum_shader, glm::vec3(-0.96f, 0.0f, 16.98f), 1.5f, glm::vec3(80.0f, 11.0f, 0.0f));
+        swordObject_1->setTexture(swordTexture);
+        ModelObject* swordObject_2 = new ModelObject("Sword 2", swordModel, *illum_shader, glm::vec3(12.5f, 3.2f, 7.3f), 1.5f, glm::vec3(-49.0f, -21.0f, 13.0f));
+        swordObject_2->setTexture(swordTexture);
+        ModelObject* swordObject_3 = new ModelObject("Sword 3", swordModel, *illum_shader, glm::vec3(-4.0f, -0.7f, 7.0f), 1.5f, glm::vec3(86.0f, 0.0f, 0.0f));
+        swordObject_3->setTexture(swordTexture);
+
+        ModelObject* shipObject = new ModelObject("Ship", "../../models/dithering_scene/ship.fbx", *illum_shader, glm::vec3(17.0f, 18.0f, 34.0f), 0.75f, glm::vec3(-90.0f, -22.0f, 265.0f));
+        shipObject->setColor(glm::vec3(0.240f, 0.177f, 0.000f));
+        
         add_internal_object(floorObject);
-        add_internal_object(bunnyObject);
-        add_internal_object(cubeObject);
-        add_internal_object(cubeObject_2);
         add_internal_object(sphereObject);
+        add_internal_object(treasureObject);
+        add_internal_object(krakenObject);
+        add_internal_object(tentaclesObject);
+        add_internal_object(mantaObject);
+        add_internal_object(compassObject);
+        add_internal_object(skullObject);
+        add_internal_object(swordObject_1);
+        add_internal_object(swordObject_2);
+        add_internal_object(swordObject_3);
+        add_internal_object(shipObject);
 
         // RBO
         glGenRenderbuffers(1, &rbo);
@@ -118,7 +143,7 @@ public:
         
         // RENDER ON SCREEN FBO
         screen_fbo->bind();
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.000f, 0.088f, 1.000f, 1.000f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection);
@@ -178,6 +203,9 @@ private:
     ScreenQuadObject* screen_quad;
 
     GLuint rbo;
+
+    Model* swordModel;
+    Texture* swordTexture;
 
     GLint colorFactor = 8;
     GLint ditherFactor = 2;

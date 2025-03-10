@@ -562,8 +562,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             }
         }
 
-        cout << endl;
-
         if(observedPlane)
         {
             ShaderScene* scene = planeCubeMap[observedPlane];
