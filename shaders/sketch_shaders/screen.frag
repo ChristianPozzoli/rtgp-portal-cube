@@ -5,12 +5,12 @@ in vec3 lightDir;
 
 out vec4 colorFrag;
 
-uniform sampler2D normalTexture;
-uniform sampler2D lambertdepthTexture;
-uniform sampler2D colorTexture;
-uniform sampler2D hatchTexture;
+uniform sampler2D normalTexture;        // 0
+uniform sampler2D lambertdepthTexture;  // 1
+uniform sampler2D colorTexture;         // 2
+uniform sampler2D hatchTexture;         // 3
 
-uniform vec3 background_color = vec3(1.0);
+uniform vec3 sky_color = vec3(0.5, 0.8, 1.0);
 uniform vec3 edge_color = vec3(0.25);
 uniform float color_saturation = 0.4;
 uniform float color_brightness = 0.9;
@@ -91,22 +91,29 @@ vec3 hsb2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+vec3 hatch_color(vec3 color_sample, vec3 hatch_sample, float lambertian) {
+    return (color_sample -
+            hatch_sample.rrr -
+            step(lambertian, 0.5) * hatch_sample.ggg -
+            step(lambertian, 0.25) * hatch_sample.bbb);
+}
+
 vec3 hatch(float noise)
 {
     vec2 noise_uv = interp_UV - noise * noise_strength_color;
     vec3 hatchColor = texture(hatchTexture, interp_UV).rgb;
-    vec3 color_sample_hsb = rgb2hsb(texture(colorTexture, noise_uv).rgb);
-    float lambertian = texture(lambertdepthTexture, noise_uv).r;
+    vec3 color_sample = texture(colorTexture, noise_uv).rgb;
+    vec3 color_sample_hsb = rgb2hsb(color_sample);
+    vec3 lambertDepth_sample = texture(lambertdepthTexture, noise_uv).rgb;
+    float sky = lambertDepth_sample.b;
+    float lambertian = lambertDepth_sample.r;
     lambertian = clamp(lambertian * 0.3 + color_sample_hsb.z * 0.7, int(lambertian >= highlight_threshold), lambertian);
     color_sample_hsb.y = color_saturation;
     color_sample_hsb.z = color_brightness;
     vec3 color_sample_rgb = hsb2rgb(color_sample_hsb);
     
-    return lambertian >= highlight_threshold ? background_color :
-            (color_sample_rgb -
-            hatchColor.rrr -
-            step(lambertian, 0.5) * hatchColor.ggg -
-            step(lambertian, 0.25) * hatchColor.bbb);
+    return lambertian >= highlight_threshold ? vec3(1.0) :
+        mix(hatch_color(color_sample_rgb, hatchColor, lambertian), color_sample + sky_color, sky);
 }
 
 void main()

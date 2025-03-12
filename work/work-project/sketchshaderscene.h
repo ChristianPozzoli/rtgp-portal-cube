@@ -21,6 +21,7 @@
 #include <utils/shader.h>
 #include <utils/framebuffer.h>
 #include <utils/texture.h>
+#include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
@@ -44,8 +45,10 @@ public:
     {
         delete screen_quad;
         delete spheremapObject;
+        delete skyboxCubeObject;
 
         delete hatch_texture;
+        delete skyCubeMap;
 
         delete normal_fbo;
         delete lambert_depth_fbo;
@@ -56,6 +59,7 @@ public:
         delete color_shader;
         delete normal_shader;
         delete spheremap_shader;
+        delete skybox_shader;
         delete screen_shader;
 
         glDeleteRenderbuffers(1, &rbo);
@@ -80,6 +84,10 @@ public:
             (SHADER_PATH + "sketch_shaders/spheremap.vert").c_str(),
             (SHADER_PATH + "sketch_shaders/spheremap.frag").c_str()
         );
+        skybox_shader = new Shader(
+            (SHADER_PATH + "skybox.vert").c_str(),
+            (SHADER_PATH + "skybox.frag").c_str()
+        );
         screen_shader = new Shader(
             (SHADER_PATH + "screen.vert").c_str(),
             (SHADER_PATH + "sketch_shaders/screen.frag").c_str()
@@ -88,6 +96,8 @@ public:
         hatch_texture = new Texture("../../textures/hatch_rgb.png");
         hatch_texture->setWrapS(GL_REPEAT);
         hatch_texture->setWrapT(GL_REPEAT);
+
+        skyCubeMap = new TextureCubeMap("../../textures/cube/plainsky/", ".png");
         
         ModelObject* bunnyObject = new ModelObject("Bunny", "../../models/bunny_lp.obj", *lambert_depth_shader, glm::vec3(- 6.0f, - 0.7f, 9.0f), 0.1f);
         bunnyObject->setRotation(glm::vec3(0.0f, 90.0f, 0.0f));
@@ -101,6 +111,8 @@ public:
 
         spheremapObject = new ModelObject("sphereMap", "../../models/sphere.obj", *spheremap_shader);
         spheremapObject->setTexture(hatch_texture);
+
+        skyboxCubeObject = new ModelObject("Cube", "../../models/cube.obj", *skybox_shader);
 
         ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *lambert_depth_shader, glm::vec3(0.0f, -1.0f, 0.0f));
         floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
@@ -151,15 +163,15 @@ public:
         add_internal_object(benchObject);
         add_internal_object(swingObject);
         add_internal_object(sliderObject);
-
+        
         glm::mat4 view = glm::mat4(1.0f);
-
+        
         // RBO
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_width, m_height);  
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
+        
         // NORMAL FBO
         normal_fbo = new FrameBuffer(m_width, m_height, rbo);
         
@@ -168,7 +180,7 @@ public:
         
         // SPHEREMAP FBO
         spheremap_fbo = new FrameBuffer(m_width, m_height, rbo);
-
+        
         // COLOR FBO
         color_fbo = new FrameBuffer(m_width, m_height, rbo);
 
@@ -210,6 +222,7 @@ public:
         
         // RENDER ON NORMAL FBO
         normal_fbo->bind();
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection, normal_shader);
@@ -219,7 +232,7 @@ public:
         lambert_depth_shader->SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
 
         lambert_depth_fbo->bind();
-        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection);
@@ -230,6 +243,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glDepthFunc(GL_LEQUAL);
+        glColorMask(0xFF, 0xFF, 0xFF, 0xFF);
         
         glm::mat4 spheremapViewMatrix = glm::mat4(
             camera->WorldFront.x, 0.0, -camera->WorldFront.z, 0.0,
@@ -250,7 +264,15 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection, color_shader);
-        
+
+        skybox_shader->Use();
+        skybox_shader->SetInt("tCube", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyCubeMap->name());
+        glDepthFunc(GL_LEQUAL);
+        skyboxCubeObject->draw(glm::mat4(glm::mat3(view)), projection);
+        glDepthFunc(GL_LESS);
+
         if(is_main_scene)
         {
             color_fbo->bind_read();
@@ -276,7 +298,7 @@ public:
         screen_shader->SetInt("colorTexture", 2);
         screen_shader->SetInt("hatchTexture", 3);
         
-        screen_shader->SetVec3("background_color", 1, glm::value_ptr(backgroundColor));
+        screen_shader->SetVec3("sky_color", 1, glm::value_ptr(skyColor));
         screen_shader->SetVec3("edge_color", 1, glm::value_ptr(edgeColor));
         screen_shader->SetFloat("color_saturation", colorSaturation);
         screen_shader->SetFloat("color_brightness", colorBrightness);
@@ -312,7 +334,7 @@ public:
         ImGui::SeparatorText("Hatch");
         ImGui::SliderFloat("Hatch texture repetition", &hatchingRepeat, 0.0f, 100.0f);
         ImGui::SeparatorText("Colors");
-        ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
+        ImGui::ColorEdit3("Sky Color", (float*)&skyColor);
         ImGui::SliderFloat("Highlight threshold", &highlightThreshold, 0.0f, 1.0f, "%.3f");
         ImGui::ColorEdit3("Edge Color", (float*)&edgeColor);
         ImGui::SliderFloat("Color saturation", &colorSaturation, 0.0f, 1.0f);
@@ -333,7 +355,7 @@ private:
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
 
     float hatchingRepeat = 40.0f;
-    glm::vec3 backgroundColor = glm::vec3(1.0f);
+    glm::vec3 skyColor = glm::vec3(0.5f, 0.75f, 1.000f);
     glm::vec3 edgeColor = glm::vec3(0.25f);
     float colorSaturation = 0.4f;
     float colorBrightness = 0.9f;
@@ -344,15 +366,18 @@ private:
     float noiseStrengthColor = 0.0025f;
 
     Texture* hatch_texture;
+    TextureCubeMap* skyCubeMap;
 
     Shader* lambert_depth_shader;
     Shader* color_shader;
     Shader* normal_shader;
     Shader* spheremap_shader;
+    Shader* skybox_shader;
     Shader* screen_shader;
 
     ScreenQuadObject* screen_quad;
     ModelObject* spheremapObject;
+    ModelObject* skyboxCubeObject;
 
     GLuint rbo;
 
