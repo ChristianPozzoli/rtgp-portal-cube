@@ -129,7 +129,7 @@ public:
         screen_quad = new ScreenQuadObject();
     }
 
-    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr, bool is_main_scene = false) override
+    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, GLfloat deltaTime, bool is_main_scene = false) override
     {
         glEnable(GL_DEPTH_TEST);
         

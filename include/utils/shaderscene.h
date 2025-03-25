@@ -50,7 +50,7 @@ public:
                     Camera* camera,
                     glm::mat4& view,
                     glm::mat4& projection,
-                    Shader* override_shader = nullptr,
+                    GLfloat deltaTime,
                     bool is_main_scene = false
                 ) {}
 

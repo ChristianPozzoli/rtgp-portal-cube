@@ -213,7 +213,7 @@ public:
         color_fbo = new FrameBuffer(width, height, rbo);
     }
 
-    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr, bool is_main_scene = false) override
+    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, GLfloat deltaTime, bool is_main_scene = false) override
     {
         normal_shader->SetVec3("pointLightPosition", 1, glm::value_ptr(lightPos0));
         normal_shader->SetFloat("highlight_threshold", highlightThreshold);

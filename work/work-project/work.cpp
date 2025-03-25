@@ -325,7 +325,7 @@ int main()
         
         glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
         
-        currentScene->update_scene(&camera, view, projection, nullptr, true);
+        currentScene->update_scene(&camera, view, projection, deltaTime, true);
         
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
@@ -392,7 +392,7 @@ int main()
             );
             
             glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-            scene->update_scene(&camera, view, portalProjection);
+            scene->update_scene(&camera, view, portalProjection, deltaTime);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             scene->draw(view, projection);
         }

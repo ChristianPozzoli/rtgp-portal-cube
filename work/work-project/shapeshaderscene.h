@@ -51,6 +51,11 @@ public:
         delete screen_quad;
 
         glDeleteRenderbuffers(1, &rbo);
+
+        for (auto i = models.begin(); i != models.end(); ++i)
+        {
+            delete (*i);
+        }
     }
 
     void setup_scene() override
@@ -63,16 +68,84 @@ public:
             (SHADER_PATH + "screen.vert").c_str(),
             (SHADER_PATH + "screen.frag").c_str()
         );
-    
-        ModelObject* sphereObject = new ModelObject("Sphere", "../../models/sphere.obj", *illum_shader, glm::vec3(0.0f, 1.0f, -10.0f), 1.5f);
-        sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0));
-    
-        ModelObject* floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f));
-        floorObject->setScale(glm::vec3(10.0f, 1.0f, 10.0f));
+        
+        floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f), 10.0f);
         floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
 
-        add_internal_object(sphereObject);
+        Model* sphereModel = new Model("../../models/sphere.obj");
+        Model* cubeModel = new Model("../../models/cube.obj");
+        Model* coneModel = new Model("../../models/shapes_scene/cone.fbx");
+        Model* exagonModel = new Model("../../models/shapes_scene/exagon.fbx");
+        Model* tetrahedronModel = new Model("../../models/shapes_scene/tetrahedron.fbx");
+        Model* dodecahedronModel = new Model("../../models/shapes_scene/dodecahedron.fbx");
+        Model* octahedronModel = new Model("../../models/shapes_scene/octahedron.fbx");
+        Model* mengerSpongeModel = new Model("../../models/shapes_scene/menger_sponge.fbx");
+        Model* pyramidStepsModel = new Model("../../models/shapes_scene/pyramid_steps.fbx");
+        Model* octahedronTruncModel = new Model("../../models/shapes_scene/octahedron_trunc.fbx");
+        Model* tetrahedronTruncModel = new Model("../../models/shapes_scene/tetrahedron_trunc.fbx");
+
+        models.push_back(sphereModel);
+        models.push_back(cubeModel);
+        models.push_back(coneModel);
+        models.push_back(exagonModel);
+        models.push_back(tetrahedronModel);
+        models.push_back(dodecahedronModel);
+        models.push_back(octahedronModel);
+        models.push_back(mengerSpongeModel);
+        models.push_back(pyramidStepsModel);
+        models.push_back(octahedronTruncModel);
+        models.push_back(tetrahedronTruncModel);
+        
+        ModelObject* sphereObject = new ModelObject("Sphere_1", sphereModel, *illum_shader, glm::vec3(0.0f, 1.0f, -10.0f));
+        sphereObject->setScale(glm::vec3(1.5f, 1.0f, 0.5f));
+        sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0));
+        
+        ModelObject* cubeObject = new ModelObject("Cube_1", cubeModel, *illum_shader, glm::vec3(-5.0f, 1.0f, -10.0f));
+        cubeObject->setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+
+        ModelObject* coneObject = new ModelObject("Cone_1", coneModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f));
+        coneObject->setColor(glm::vec3(0.0f, 0.0f, 1.0f));
+
+        ModelObject* exagonObject = new ModelObject("Exagon_1", exagonModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* tetrahedronObject = new ModelObject("Tetrahedron_1", tetrahedronModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* dodecahedronObject = new ModelObject("Dodecahedron_1", dodecahedronModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* octahedronObject = new ModelObject("Octahedron_1", octahedronModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* mengerSpongeObject = new ModelObject("MengerSponge_1", mengerSpongeModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* pyramidStepsObject = new ModelObject("PyramidSteps_1", pyramidStepsModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* octahedronTruncObject = new ModelObject("OctahedronTrunc_1", octahedronTruncModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+        ModelObject* tetrahedronTruncObject = new ModelObject("TetrahedronTrunc_1", tetrahedronTruncModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
+
         add_internal_object(floorObject);
+        add_internal_object(sphereObject);
+        add_internal_object(cubeObject);
+        add_internal_object(coneObject);
+        add_internal_object(exagonObject);
+        add_internal_object(tetrahedronObject);
+        add_internal_object(dodecahedronObject);
+        add_internal_object(octahedronObject);
+        add_internal_object(mengerSpongeObject);
+        add_internal_object(pyramidStepsObject);
+        add_internal_object(octahedronTruncObject);
+        add_internal_object(tetrahedronTruncObject);
+
+        float step = 2 * glm::pi<float>() / (internal_objects->size() - 1);
+        glm::vec3 center = glm::vec3(5.0f, 0.2f, 10.0f);
+        float distance = 15.0f;
+        float current_step = 0;
+
+        for (auto i = internal_objects->begin(); i != internal_objects->end(); ++i)
+        {
+            if (*i != floorObject)
+            {
+                DrawableSceneObject& obj = **i;
+
+
+                obj.setPosition(center + glm::vec3( distance * glm::cos(current_step), 1.0f + (rand() % 5),  distance * glm::sin(current_step)));
+                current_step += step;
+                glm::vec3 rotation = obj.position() * 10.0f + GLfloat(rand());
+                obj.setRotation(rotation);
+            }
+        }
 
         // RBO
         glGenRenderbuffers(1, &rbo);
@@ -100,11 +173,30 @@ public:
         screen_fbo = new FrameBuffer(width, height, rbo);
     }
 
-    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, Shader* override_shader = nullptr, bool is_main_scene = false) override
+    void update_scene(Camera* camera, glm::mat4& view, glm::mat4& projection, GLfloat deltaTime, bool is_main_scene = false) override
     {
+        for (auto i = internal_objects->begin(); i != internal_objects->end(); ++i) {
+            if (*i != floorObject) {
+                DrawableSceneObject* obj = *i;
+                
+                glm::vec3 rotation = obj->rotation();
+                rotation = glm::mod(rotation + deltaTime * 50, 360.0f);
+                obj->setRotation(rotation);
+            }
+        }
+
+        for (auto i = external_objects->begin(); i != external_objects->end(); ++i) {
+            DrawableSceneObject* obj = *i;
+            
+            glm::vec3 rotation = obj->rotation();
+            rotation = glm::mod(rotation + deltaTime * 50, 360.0f);
+            obj->setRotation(rotation);
+        }
+
         glEnable(GL_DEPTH_TEST);
         
         setup_illum_shader(*illum_shader);
+        illum_shader->SetFloat("time", glfwGetTime());
         
         // RENDER ON SCREEN FBO
         screen_fbo->bind();
@@ -173,6 +265,9 @@ private:
     ScreenQuadObject* screen_quad;
 
     GLuint rbo;
+
+    ModelObject* floorObject;
+    vector<Model*> models;
 
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
     glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);

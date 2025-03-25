@@ -12,7 +12,7 @@ using namespace std;
 
 LineDrawer::LineDrawer(glm::mat4& view, glm::mat4& projection) : m_view(view), m_projection(projection)
 {
-    line_shader = new Shader("basic.vert", "fullcolor.frag");
+    line_shader = new Shader("../../shaders/basic.vert", "../../shaders/fullcolor.frag");
 }
 
 GLuint VBO, VAO;
@@ -24,33 +24,38 @@ GLfloat vertices[] = {
 
 void LineDrawer::draw(glm::vec3 start, glm::vec3 end, glm::vec3 color, glm::mat4& model)
 {
-    line_shader->Use();
-
-    vertices[0] = start.x;
-    vertices[1] = start.y;
-    vertices[2] = start.z;
-    vertices[3] = end.x;
-    vertices[4] = end.y;
-    vertices[5] = end.z;
-
-    // VBO Vertex Buffer Obj
-    // VAO Vertex Array Obj
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    if (
+        start.x != vertices[0] || start.y != vertices[1] || start.z != vertices[2] ||
+        end.x != vertices[3] || end.y != vertices[4] || end.z != vertices[5]
+    )
+    {
+        vertices[0] = start.x;
+        vertices[1] = start.y;
+        vertices[2] = start.z;
+        vertices[3] = end.x;
+        vertices[4] = end.y;
+        vertices[5] = end.z;
+        
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        
+        // -- Bind --
+        glBindVertexArray(VAO);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+        
+        // -- Unbinding --
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
     
-    // -- Bind --
-    // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-
-    // -- Unbinding --
-    glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
+    line_shader->Use();
     
     glUniformMatrix4fv(glGetUniformLocation(line_shader->Program, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(m_projection));
     glUniformMatrix4fv(glGetUniformLocation(line_shader->Program, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(m_view));
@@ -65,4 +70,6 @@ LineDrawer::~LineDrawer()
 {
     line_shader->Delete();
     delete line_shader;
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
 }
