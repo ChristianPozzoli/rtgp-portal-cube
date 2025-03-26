@@ -174,5 +174,5 @@ vec3 GGX()
 
 void main(void)
 {
-  	colorFrag = vec4(Illumination_Model(), 1.0f);
+  	colorFrag = vec4(BlinnPhong(), 1.0f);
 }

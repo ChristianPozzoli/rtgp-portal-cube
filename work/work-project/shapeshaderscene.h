@@ -300,13 +300,13 @@ private:
     ModelObject* floorObject;
     vector<Model*> models;
 
-    glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
+    glm::vec3 lightPos0 = glm::vec3(5.0f, 2.5f, 10.0f);
     glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
     GLfloat Kd = 1.25f;
-    GLfloat Ks = 0.4f;
-    GLfloat Ka = 0.1f;
-    GLfloat shininess = 25.0f;
+    GLfloat Ks = 0.6f;
+    GLfloat Ka = 0.0f;
+    GLfloat shininess = 50.0f;
     GLfloat alpha = 0.2f;
     GLfloat F0 = 0.9f;
 
