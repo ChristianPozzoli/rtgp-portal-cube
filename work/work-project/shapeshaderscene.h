@@ -139,7 +139,6 @@ public:
             {
                 DrawableSceneObject& obj = **i;
 
-
                 obj.setPosition(center + glm::vec3( distance * glm::cos(current_step), 1.0f + (rand() % 5),  distance * glm::sin(current_step)));
                 current_step += step;
                 glm::vec3 rotation = obj.position() * 10.0f + GLfloat(rand());

@@ -66,7 +66,7 @@ GLfloat spin_speed = 10.0f;
 GLfloat float_speed = 2.0f;
 GLfloat float_amount = 0.08f;
 
-GLboolean spinning = GL_FALSE;
+GLboolean spinning = GL_TRUE;
 GLboolean wireframe = GL_FALSE;
 
 Camera camera(glm::vec3(5.0f, 0.0f, 15.0f), GL_TRUE);
@@ -91,6 +91,7 @@ GLfloat planeScale = 0.95f;
 glm::vec3 cubeStructurePosition(5.0f, 0.2f, 10.0f);
 glm::vec3 cubeStructureRotation(0.0f, 0.0f, 0.0f);
 GLfloat cubeStructureScale = 1.5f;
+GLfloat minCubeDistance = 1.0f;
 
 ShaderScene* currentScene = nullptr;
 
@@ -232,7 +233,7 @@ int main()
             ImGui::InputFloat3("Position", (float*)&camera.Position);
             ImGui::SliderFloat("Speed", &camera.MovementSpeed, 0.0f, 20.0f);
 
-            ImGui::SeparatorText("Properties");
+            ImGui::SeparatorText("Cube Properties");
             ImGui::Checkbox("Wireframe", (bool*)&wireframe);
             ImGui::Checkbox("Spinning", (bool*)&spinning);
             if (ImGui::TreeNode("Spinning options")) {
@@ -524,20 +525,23 @@ void apply_camera_movements()
 {
     GLboolean diagonal_movement = (keys[GLFW_KEY_W] ^ keys[GLFW_KEY_S]) && (keys[GLFW_KEY_A] ^ keys[GLFW_KEY_D]);
     camera.SetMovementCompensation(diagonal_movement);
+
+    glm::vec3 cameraToCube = cubeStructurePosition - camera.Position;
+    float cameraToCubeDistance = glm::dot(cameraToCube, cameraToCube);
     
-    if(keys[GLFW_KEY_W])
+    if(keys[GLFW_KEY_W] && (cameraToCubeDistance - glm::dot(camera.Front, cameraToCube)) > minCubeDistance)
     {
         camera.ProcessKeyboard(FORWARD, deltaTime);
     }
-    if(keys[GLFW_KEY_S])
+    if(keys[GLFW_KEY_S] && (cameraToCubeDistance - glm::dot(-camera.Front, cameraToCube)) > minCubeDistance)
     {
         camera.ProcessKeyboard(BACKWARD, deltaTime);
     }
-    if(keys[GLFW_KEY_A])
+    if(keys[GLFW_KEY_A] && (cameraToCubeDistance - glm::dot(-camera.Right, cameraToCube)) > minCubeDistance)
     {
         camera.ProcessKeyboard(LEFT, deltaTime);
     }
-    if(keys[GLFW_KEY_D])
+    if(keys[GLFW_KEY_D] && (cameraToCubeDistance - glm::dot(camera.Right, cameraToCube)) > minCubeDistance)
     {
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
