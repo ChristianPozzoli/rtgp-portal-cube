@@ -1,6 +1,7 @@
 .vscode/
 .vs/
-work/**/*.obj
+*.obj
+!models/**/*.obj
 *.exe
 *.ilk
 *.pdb
