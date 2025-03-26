@@ -94,7 +94,7 @@ public:
 protected:
     GLint m_width;
     GLint m_height;
-    const string SHADER_PATH = "../../shaders/";
+    const string SHADER_PATH = "../shaders/";
 
     std::string m_name;
     vector<DrawableSceneObject*>* external_objects;

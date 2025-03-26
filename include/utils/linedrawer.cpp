@@ -12,7 +12,7 @@ using namespace std;
 
 LineDrawer::LineDrawer(glm::mat4& view, glm::mat4& projection) : m_view(view), m_projection(projection)
 {
-    line_shader = new Shader("../../shaders/basic.vert", "../../shaders/fullcolor.frag");
+    line_shader = new Shader("../shaders/basic.vert", "../shaders/fullcolor.frag");
 }
 
 GLuint VBO, VAO;
