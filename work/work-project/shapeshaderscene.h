@@ -20,6 +20,7 @@
 #include <utils/shader.h>
 #include <utils/framebuffer.h>
 #include <utils/texture.h>
+#include <utils/texturecubemap.h>
 #include <utils/model.h>
 #include <utils/camera.h>
 
@@ -45,10 +46,15 @@ public:
     ~ShapeShaderScene()
     {
         delete illum_shader;
+        delete skybox_shader;
         delete screen_shader;
 
         delete screen_fbo;
         delete screen_quad;
+
+        delete shapeParent;
+        delete skyboxCubeObject;
+        delete skyCubeMap;
 
         glDeleteRenderbuffers(1, &rbo);
 
@@ -64,13 +70,19 @@ public:
             (SHADER_PATH + "illumination_model.vert").c_str(),
             (SHADER_PATH + "illumination_model.frag").c_str()
         );
+        skybox_shader = new Shader(
+            (SHADER_PATH + "skybox.vert").c_str(),
+            (SHADER_PATH + "skybox.frag").c_str()
+        );
         screen_shader = new Shader(
             (SHADER_PATH + "screen.vert").c_str(),
             (SHADER_PATH + "screen.frag").c_str()
         );
+
+        skyCubeMap = new TextureCubeMap("../../textures/cube/space/", ".png");
         
         floorObject = new ModelObject("Floor", "../../models/plane.obj", *illum_shader, glm::vec3(0.0f, -1.0f, 0.0f), 10.0f);
-        floorObject->setColor(glm::vec3(0.0f, 0.5f, 0.0f));
+        floorObject->setColor(glm::vec3(0.33f));
 
         Model* sphereModel = new Model("../../models/sphere.obj");
         Model* cubeModel = new Model("../../models/cube.obj");
@@ -96,16 +108,12 @@ public:
         models.push_back(octahedronTruncModel);
         models.push_back(tetrahedronTruncModel);
         
+        skyboxCubeObject = new ModelObject("SkyboxCube_1", cubeModel, *skybox_shader);
+        
         ModelObject* sphereObject = new ModelObject("Sphere_1", sphereModel, *illum_shader, glm::vec3(0.0f, 1.0f, -10.0f));
         sphereObject->setScale(glm::vec3(1.5f, 1.0f, 0.5f));
-        sphereObject->setColor(glm::vec3(1.0f, 0.0f, 0.0));
-        
         ModelObject* cubeObject = new ModelObject("Cube_1", cubeModel, *illum_shader, glm::vec3(-5.0f, 1.0f, -10.0f));
-        cubeObject->setColor(glm::vec3(0.0f, 0.0f, 1.0f));
-
         ModelObject* coneObject = new ModelObject("Cone_1", coneModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f));
-        coneObject->setColor(glm::vec3(0.0f, 0.0f, 1.0f));
-
         ModelObject* exagonObject = new ModelObject("Exagon_1", exagonModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
         ModelObject* tetrahedronObject = new ModelObject("Tetrahedron_1", tetrahedronModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
         ModelObject* dodecahedronObject = new ModelObject("Dodecahedron_1", dodecahedronModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
@@ -114,7 +122,7 @@ public:
         ModelObject* pyramidStepsObject = new ModelObject("PyramidSteps_1", pyramidStepsModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
         ModelObject* octahedronTruncObject = new ModelObject("OctahedronTrunc_1", octahedronTruncModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
         ModelObject* tetrahedronTruncObject = new ModelObject("TetrahedronTrunc_1", tetrahedronTruncModel, *illum_shader, glm::vec3(5.0f, 1.0f, -10.0f), 1.5f);
-
+        
         add_internal_object(floorObject);
         add_internal_object(sphereObject);
         add_internal_object(cubeObject);
@@ -127,25 +135,34 @@ public:
         add_internal_object(pyramidStepsObject);
         add_internal_object(octahedronTruncObject);
         add_internal_object(tetrahedronTruncObject);
-
+        
         float step = 2 * glm::pi<float>() / (internal_objects->size() - 1);
         glm::vec3 center = glm::vec3(5.0f, 0.2f, 10.0f);
-        float distance = 15.0f;
+        float distance = 20.0f;
         float current_step = 0;
+        
+        glm::vec3 K = glm::vec3(1.0, 2.0 / 3.0, 1.0 / 3.0);
+        
+        shapeParent = new SceneObject("", center);
 
         for (auto i = internal_objects->begin(); i != internal_objects->end(); ++i)
         {
             if (*i != floorObject)
             {
                 DrawableSceneObject& obj = **i;
-
-                obj.setPosition(center + glm::vec3( distance * glm::cos(current_step), 1.0f + (rand() % 5),  distance * glm::sin(current_step)));
+                shapeParent->addChild(&obj);
+                obj.setPosition(glm::vec3( distance * glm::cos(current_step), 1.0f + (rand() % 5),  distance * glm::sin(current_step)));
                 current_step += step;
                 glm::vec3 rotation = obj.position() * 10.0f + GLfloat(rand());
                 obj.setRotation(rotation);
+                
+                float hue = 4 * current_step / glm::pi<float>();
+                glm::vec3 p = abs(glm::fract(hue + K) * 6.0f - 3.0f);
+                obj.setColor(0.5f * glm::clamp(p - K.x, 0.0f, 1.0f));
             }
         }
 
+        
         // RBO
         glGenRenderbuffers(1, &rbo);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo); 
@@ -192,6 +209,10 @@ public:
             obj->setRotation(rotation);
         }
 
+        glm::vec3 rotation = shapeParent->rotation();
+        rotation.y = glm::mod(rotation.y + deltaTime * 10, 360.0f);
+        shapeParent->setRotation(rotation);
+
         glEnable(GL_DEPTH_TEST);
         
         setup_illum_shader(*illum_shader);
@@ -199,10 +220,17 @@ public:
         
         // RENDER ON SCREEN FBO
         screen_fbo->bind();
-        glClearColor(0.26f, 0.46f, 0.98f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         draw_objects(view, projection);
+
+        skybox_shader->Use();
+        skybox_shader->SetInt("tCube", 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skyCubeMap->name());
+        glDepthFunc(GL_LEQUAL);
+        skyboxCubeObject->draw(glm::mat4(glm::mat3(view)), projection);
+        glDepthFunc(GL_LESS);
         
         if(is_main_scene)
         {
@@ -257,6 +285,7 @@ public:
 
 private:
     Shader* illum_shader;
+    Shader* skybox_shader;
     Shader* screen_shader;
 
     FrameBuffer* screen_fbo;
@@ -264,14 +293,17 @@ private:
     ScreenQuadObject* screen_quad;
 
     GLuint rbo;
-
+    
+    SceneObject* shapeParent;
+    TextureCubeMap* skyCubeMap;
+    ModelObject* skyboxCubeObject;
     ModelObject* floorObject;
     vector<Model*> models;
 
     glm::vec3 lightPos0 = glm::vec3(5.0f, 10.0f, 10.0f);
     glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
-    GLfloat Kd = 0.5f;
+    GLfloat Kd = 1.25f;
     GLfloat Ks = 0.4f;
     GLfloat Ka = 0.1f;
     GLfloat shininess = 25.0f;
