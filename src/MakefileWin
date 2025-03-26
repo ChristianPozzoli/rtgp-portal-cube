@@ -19,7 +19,7 @@ CCFLAGS  = /Od /Zi /EHsc /MT
 # linker flags:
 LFLAGS = /LIBPATH:../libs/win glfw3.lib assimp-vc143-mt.lib zlib.lib minizip.lib kubazip.lib poly2tri.lib polyclipping.lib draco.lib pugixml.lib gdi32.lib user32.lib Shell32.lib Advapi32.lib
 
-SOURCES = ../include/glad/glad.c ../include/imgui/*.cpp ../include/utils/*.cpp $(FILENAME).cpp
+SOURCES = ../include/glad/glad.c ../include/imgui/*.cpp ../include/utils/*.cpp main.cpp
 
 TARGET = $(FILENAME).exe
 
