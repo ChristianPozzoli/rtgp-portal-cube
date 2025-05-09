@@ -345,6 +345,16 @@ public:
         ImGui::SliderFloat("Noise frequency edge", &noiseFrequencyEdge, 0.0f, 500.0f);
         ImGui::SliderFloat("Noise strength edge", &noiseStrengthEdge, 0.0f, 0.005f, "%.5f");
         ImGui::SliderFloat("Noise strength color", &noiseStrengthColor, 0.0f, 0.005f, "%.5f");
+        
+        if (ImGui::TreeNode(("Buffers##"+ m_name).c_str()))
+        {
+            ImGui::Image((ImTextureID)(intptr_t)normal_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::Image((ImTextureID)(intptr_t)lambert_depth_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::Image((ImTextureID)(intptr_t)color_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::Image((ImTextureID)(intptr_t)spheremap_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
+            ImGui::TreePop();
+        }
 
         ShaderScene::drawImGui();
     }

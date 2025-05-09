@@ -78,11 +78,11 @@ class DrawableSceneObject : public DrawableObject, public SceneObject
 
         void drawImGui() {
             ImGui::SeparatorText(m_name.c_str());
-			if (ImGui::DragFloat3((m_name + " position").c_str(), (float*)&imgui_position)) { this->setPosition(imgui_position); }
-			if (ImGui::DragFloat3((m_name + " rotation").c_str(), (float*)&imgui_rotation)) { this->setRotation(imgui_rotation); }
-            if (ImGui::InputFloat((m_name + " scale").c_str(), (float*)&imgui_scale_f)) { this->setScale(imgui_scale_f); }
-            if (ImGui::ColorEdit3((m_name + " color").c_str(), (float*)&imgui_color)) { this->setColor(imgui_color); }
-            if (ImGui::SliderFloat((m_name + " texture repetition").c_str(), &imgui_tex_repetition, 0.0f, 100.0f))
+			if (ImGui::DragFloat3(("Position##" + m_name).c_str(), (float*)&imgui_position)) { this->setPosition(imgui_position); }
+			if (ImGui::DragFloat3(("Rotation##" + m_name).c_str(), (float*)&imgui_rotation)) { this->setRotation(imgui_rotation); }
+            if (ImGui::InputFloat(("Scale##" + m_name).c_str(), (float*)&imgui_scale_f)) { this->setScale(imgui_scale_f); }
+            if (ImGui::ColorEdit3(("Color##" + m_name).c_str(), (float*)&imgui_color)) { this->setColor(imgui_color); }
+            if (ImGui::SliderFloat(("Texture repetition##" + m_name).c_str(), &imgui_tex_repetition, 0.0f, 100.0f))
             {
                 Texture* tex = this->texture();
                 if (tex)

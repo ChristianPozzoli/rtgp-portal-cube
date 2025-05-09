@@ -222,6 +222,15 @@ public:
         ImGui::SliderFloat("Blur offset amount", &offset_amount_blur, 0.0f, 500.0f);
         ImGui::SliderFloat("Random blur offset amount", &random_offset_amount_blur, 0.0f, 5000.0f);
 
+        if (ImGui::TreeNode(("Buffers##"+ m_name).c_str()))
+        {
+            ImGui::Image((ImTextureID)(intptr_t)color_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::Image((ImTextureID)(intptr_t)blur_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            ImGui::Image((ImTextureID)(intptr_t)mean_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            
+            ImGui::TreePop();
+        }
+
         ShaderScene::drawImGui();
     }
 

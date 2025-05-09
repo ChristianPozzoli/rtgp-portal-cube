@@ -194,6 +194,13 @@ public:
         ImGui::SliderInt("Color Factor", &colorFactor, 0.0f, 10.0f);
         ImGui::SliderInt("Dither Factor", &ditherFactor, 1.0f, 24.0f);
 
+        if (ImGui::TreeNode(("Buffers##"+ m_name).c_str()))
+        {
+            ImGui::Image((ImTextureID)(intptr_t)screen_fbo->texture_name(), ImVec2(m_width * 0.2f, m_height * 0.2f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+            
+            ImGui::TreePop();
+        }
+
         ShaderScene::drawImGui();
     }
 

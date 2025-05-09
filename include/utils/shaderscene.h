@@ -67,7 +67,7 @@ public:
     
     virtual void drawImGui()
     {
-        if (!ImGui::TreeNode((m_name + " objects").c_str()))
+        if (!ImGui::TreeNode(("Objects##"+ m_name).c_str()))
         {
             return;
         }
