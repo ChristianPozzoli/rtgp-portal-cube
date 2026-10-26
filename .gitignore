@@ -7,3 +7,5 @@
 *.pdb
 *.code-workspace
 libs/
+[Bb]uild
+[Bb]uilds
